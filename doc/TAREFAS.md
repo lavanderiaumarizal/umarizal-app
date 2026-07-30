@@ -23,8 +23,9 @@
 |---|--------|-----------|--------|
 | B1 | **Criar tabela `etapas_producao`** | Adicionar model Prisma `EtapaProducao` com campos: orcamentoId, etapa (1-12), nome, status, responsavel, concluidoEm, observacoes. Unique(orcamentoId, etapa) | 🔴 |
 | B2 | **Criar tabela `carregamento_veiculo`** | Adicionar model Prisma `CarregamentoVeiculo` com campos: orcamentoId (unique), carregadoEm, usuarioId, veiculo | 🔴 |
-| B3 | **Adicionar nível `motorista` aos usuários** | Adicionar perfil `motorista` no sistema de permissões. Garantir que `POST /api/auth/login` aceite login de motoristas | 🔴 |
-| B4 | **Criar endpoint `POST /api/auth/login-motorista`** | Login específico para motoristas com token de 30 dias. Body: { cpf, senha }. Response: { token, motorista } | 🔴 |
+| B3 | **Expandir sistema de permissões para multi-perfil** | Adicionar campo `perfisApp` (JSON array) à tabela `usuarios`. Ex: `["motorista","expedicao"]`. Manter campo `nivel` existente para compatibilidade. Admin pode ter múltiplos perfis | 🔴 |
+| B3.1 | **Criar endpoint `PATCH /api/admin/usuarios/:id/perfis`** | Endpoint admin para gerenciar perfis de um usuário. Body: `{ perfis: string[] }`. Atualiza `perfisApp` no banco | 🔴 |
+| B4 | **Criar endpoint `POST /api/auth/login-motorista`** | Login específico para motoristas com token de 30 dias. Body: { cpf, senha }. Response: { token, usuario: { id, nome, perfis, transportadorId? } }. O JWT deve conter `perfis: string[]` (array, não string única) | 🔴 |
 | B5 | **Criar endpoint `POST /api/etapas/:orcamentoId/iniciar`** | Inicia uma etapa (status = em_andamento). Body: { etapa, responsavel } | 🔴 |
 | B6 | **Criar endpoint `POST /api/etapas/:orcamentoId/concluir`** | Conclui uma etapa (status = concluida). Body: { etapa, responsavel, observacoes? }. Deve avançar a faseAtual do orçamento conforme mapeamento. Sincroniza com fases existentes | 🔴 |
 | B7 | **Criar endpoint `POST /api/etapas/:orcamentoId/retornar`** | Retorna uma etapa (status = pendente). Body: { etapa, motivo }. Registra observacao | 🔴 |
@@ -35,7 +36,7 @@
 | B12 | **Criar endpoint `DELETE /api/orcamentos/:id/carregar`** | Remove flag de carregado no veículo | 🔴 |
 | B13 | **Criar endpoint `GET /api/orcamentos/minhas-coletas`** | Retorna coletas atribuídas ao transportador do motorista logado | 🔴 |
 | B14 | **Criar endpoint `GET /api/orcamentos/minhas-entregas`** | Retorna entregas atribuídas ao transportador do motorista logado | 🔴 |
-| B15 | **Criar middleware de perfil** | Middleware `requirePerfil(...perfis)` que verifica o perfil do usuário no JWT e retorna 403 se não tiver permissão | 🔴 |
+| B15 | **Criar middleware de perfil (multi-perfil)** | Middleware `requirePerfil(...perfis)` que aceita array de perfis. Admin sempre passa. Usuário precisa ter PELO MENOS UM dos perfis exigidos. Se `req.user.perfis` incluir 'admin', libera tudo | 🔴 |
 | B16 | **Seed de dados** | Criar script que inicializa as 12 etapas para orçamentos existentes com status adequado baseado no faseAtual | 🔴 |
 | B17 | **Ajustar rate limiter** | Garantir que o rate limiter permita 60 req/min para o app e 10 req/min para login | 🔴 |
 
@@ -63,8 +64,10 @@
 
 | # | Tarefa | Descrição | Status |
 |---|--------|-----------|--------|
-| B18 | **Criar endpoint `GET /api/kanban/:perfil`** | Retorna orçamentos agrupados por status/fase conforme o perfil (motorista vê coletas/entregas, lavagem vê F2, etc) | 🔴 |
+| B18 | **Criar endpoint `GET /api/kanban/:perfil`** | Retorna orçamentos agrupados por status/fase conforme o perfil (motorista vê coletas/entregas, lavagem vê F2, etc). **Sem valores financeiros para perfis não-admin** | 🔴 |
 | B19 | **Criar endpoint `PUT /api/orcamentos/:id/etapa`** | Atualiza etapa específica com status e responsavel. Alternativa mais simples aos endpoints individuais | 🔴 |
+| B20 | **Criar filtro de dados por perfil** | Implementar função `filtrarDadosPorPerfil(orcamento, perfis)` que remove campos financeiros (valorTotal, pix, parcelas, etc.) e dados sensíveis (CPF, e-mail) para perfis não-admin. Aplicar em todos os endpoints de listagem/detalhes | 🔴 |
+| B21 | **Criar endpoint `GET /api/orcamentos/documentacao-pendente`** | Retorna orçamentos em F1_COLETADO aguardando documentação (etapa 2). Inclui itens com medidas para vincular fotos. **Sem valores financeiros** | 🔴 |
 
 ### Tarefas de Frontend (App)
 
@@ -114,20 +117,26 @@
 
 ---
 
-## Sprint 5 — Expedição e Finalização (Almoxarifado + Devolução)
+## Sprint 5 — Expedição, Documentação e Finalização (Almoxarifado + Devolução)
 
-**Objetivo:** Implementar o almoxarifado (substituição da planilha), inspeção, embalagem e relatório.
+**Objetivo:** Implementar o almoxarifado (substituição da planilha), documentação de entrada com fotos, inspeção, embalagem e relatório.
 
 ### Tarefas de Frontend (App)
 
 | # | Tarefa | Descrição | Status |
 |---|--------|-----------|--------|
-| F26 | **Tela Almoxarifado/Estoque** | Substitui a planilha manual. Lista de tapetes com checkbox de carregamento. Filtros: status (coletado/carregado/entregue), período, tipo. Busca textual | 🔴 |
+| F26 | **Tela Almoxarifado/Estoque** | Substitui a planilha manual. Lista de tapetes com checkbox de carregamento. Filtros: status (coletado/carregado/entregue), período, tipo. Busca textual. **Sem preços** | 🔴 |
 | F27 | **Flag de Carregamento** | Checkbox ao lado de cada tapete. Marcou = carregado no veículo. Desmarcou = remove flag. Consome POST/DELETE /api/orcamentos/:id/carregar | 🔴 |
 | F28 | **Inspeção Final** | Checklist de inspeção: franjas, bordas, superfície, odores. Cada item OK/NOK. Só libera se todos OK. Avança etapa 10 | 🔴 |
 | F29 | **Embalagem** | Botão "Embalar" que avança etapa 11. Opção de foto do tapete embalado | 🔴 |
-| F30 | **Tela Relatório do Dia** | Totais: coletas, entregas, por tipo de serviço, tempo médio por etapa. Botão Compartilhar resumo (texto ou PDF) | 🔴 |
+| F30 | **Tela Relatório do Dia** | Totais: coletas, entregas, por tipo de serviço, tempo médio por etapa. Botão Compartilhar resumo (texto ou PDF). **Admin vê valores; demais perfis veem apenas quantidades** | 🔴 |
 | F30.1 | **Notificações Push (opcional)** | Configurar `expo-notifications` para enviar notificações ao motorista quando uma nova rota for gerada, ou à equipe quando um tapete entrar na fila. Pode ser implementado em sprint futura | 🔴 |
+| **F31** | **Tela Documentação de Entrada** | Lista de orçamentos em F1_COLETADO aguardando documentação. Mostra código, cliente, data da coleta. Toque abre detalhes dos itens para fotografar | 🔴 |
+| **F32** | **Tela Captura por Item** | Ao selecionar um orçamento, mostra lista de itens (tapetes) com nome, medidas. Cada item tem botão [+] para abrir câmera. Miniaturas das fotos já tiradas por item | 🔴 |
+| **F33** | **Vínculo Foto-Item** | Ao tirar foto via expo-camera, vincula ao `itemId` do OrcamentoItem. Envia para `POST /api/orcamentos/:id/fotos` com `{ fotos: [...], itemId }`. Preview das fotos enviadas | 🔴 |
+| **F34** | **Remoção de Foto** | Deslizar ou botão X na miniatura para remover foto. Consome `DELETE /api/orcamentos/:id/fotos/:indice` | 🔴 |
+| **F35** | **Confirmar Documentação** | Botão "Documentação Concluída" que avança etapa 2. Consome endpoint de conclusão de etapa. Notifica backend para atualizar status | 🔴 |
+| **F36** | **Filtro de preços por perfil** | Implementar lógica de ocultação de valores em TODAS as telas do app. O Zustand store contém `perfis: string[]`. Componentes de valor só renderizam se `perfis.includes('admin')`. Criar componente `<Preco value={x} />` que só exibe se admin | 🔴 |
 
 ---
 
@@ -154,28 +163,30 @@
 
 | Sprint | Tarefas Backend | Tarefas Frontend | Total |
 |--------|-----------------|------------------|-------|
-| **1 — Fundação** | 17 (B1-B17) | 10 (F1-F7.2) | **27** |
-| **2 — Kanban/Etapas** | 2 (B18-B19) | 6 (F8-F13) | **8** |
+| **1 — Fundação** | 17 (B1-B17) + 2 (B3.1) | 10 (F1-F7.2) | **29** |
+| **2 — Kanban/Etapas** | 4 (B18-B21) | 6 (F8-F13) | **10** |
 | **3 — Motorista** | 0 | 7 (F14-F19.1) | **7** |
 | **4 — Lavagem/Secagem** | 0 | 6 (F20-F25) | **6** |
-| **5 — Expedição** | 0 | 6 (F26-F30.1) | **6** |
+| **5 — Expedição** | 0 | 12 (F26-F36) | **12** |
 | **6 — Testes/Build** | 0 | 8 (Q1-Q8) | **8** |
-| **Total** | **19** | **43** | **62** |
+| **Total** | **23** | **49** | **72** |
 
 ---
 
 ## Dependências entre tarefas
 
 ```
-B1 → B2 → B3 → B4 (cadeia de backend)
+B1 → B2 → B3 → B3.1 → B4 (cadeia de backend)
 B5 → B6 → B7 → B8 (cadeia de endpoints de etapas)
 B1 + B5..B8 → B16 (seed depende das tabelas e endpoints)
+B4 + B15 + B20 → F36 (filtro de precos depende do backend)
 B4 → F5 (login depende do endpoint)
 F5 → F6 → F7 (navegação depende do login)
 F8 → F9 → F10 (telas dependem do dashboard)
+F31..F35 → B21 (documentacao depende do endpoint)
 F14..F19 → F30 (relatório depende das ações)
 F26 → F27 (almoxarifado depende da flag)
-F20..F29 → Q1..Q4 (testes dependem das telas)
+F20..F36 → Q1..Q4 (testes dependem das telas)
 ```
 
 ---

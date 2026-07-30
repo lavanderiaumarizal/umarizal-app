@@ -18,6 +18,7 @@ Substitui a planilha manual de controle de entrada/saída de tapetes.
 | Quantidade/Tamanho | `orcamento.itens[].largura x comprimento` |
 | Data de devolução | `orcamento.dataEntregaAgendada` |
 | Assinatura de entrega | Nova: assinatura digital no app |
+| **Fotos documentação** | `orcamento.fotosEstadoInicial` (vinculadas por `itemId`) |
 
 ### 7.2 Tela "Almoxarifado/Estoque"
 
