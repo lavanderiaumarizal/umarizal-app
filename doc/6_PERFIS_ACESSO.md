@@ -158,15 +158,21 @@ function filtrarDadosPorPerfil(orcamento: any, perfis: string[]) {
 
 | Ação | Admin | Motorista | Lavagem | Secagem | Expedição |
 |------|-------|-----------|---------|---------|-----------|
+| Selecionar data da rota | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Gerar rota (RouteXL) | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Inverter ordem (Flip) | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Salvar rota | ✅ | ✅ | ❌ | ❌ | ❌ |
 | Ver rota do dia | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Ver mapa da rota | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Navegar para endereço (Maps) | ✅ | ✅ | ❌ | ❌ | ❌ |
 | Coletar tapete | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Entregar tapete | ✅ | ✅ | ❌ | ❌ | ❌ |
 | Documentar (fotos + itens) | ✅ | ❌ | ❌ | ❌ | ✅ |
 | Aspirar tapete | ✅ | ❌ | ❌ | ❌ | ✅ |
 | Iniciar lavagem | ✅ | ❌ | ✅ | ❌ | ❌ |
 | Iniciar secagem | ✅ | ❌ | ❌ | ✅ | ❌ |
 | Inspecionar | ✅ | ❌ | ❌ | ❌ | ✅ |
 | Embalar | ✅ | ❌ | ❌ | ❌ | ✅ |
-| Entregar tapete | ✅ | ✅ | ❌ | ❌ | ❌ |
 | Avançar qualquer etapa | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Ver kanban completo | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Carregar no veículo | ✅ | ✅ | ❌ | ❌ | ✅ |

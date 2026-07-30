@@ -43,20 +43,125 @@ Cards por perfil — cada card mostra apenas a contagem de itens pendentes.
 - 💰 **Financeiro** — Valores, pagamentos, PIX (visível apenas para admin)
 - 👥 **Todos os perfis** — Pode alternar entre visões
 
-## 3.3 Rota do Dia (Motorista)
+## 3.3 Rota do Dia — Motorista (Fluxo Completo)
 
-- Lista de paradas ordenadas (RouteXL)
-- Cada parada mostra:
-  - Ordem
-  - Nome do cliente
-  - Endereço
-  - Tipo (Coleta/Entrega)
-  - Horário estimado
-  - Status (pendente → coletado/entregue)
-- Ações:
-  - ✅ **Coletar** → abre câmera para foto + assinatura
-  - ✅ **Entregar** → abre assinatura digital do cliente
-  - 📍 **Ver no mapa** → link para Google Maps
+### Visão Geral
+
+O motorista gerencia toda a rota do dia dentro do app, replicando as funcionalidades do painel admin (`OtimizarRotaModal` + `ColetasPendentes` + `EntregasPendentes`), mas adaptado para uso mobile com ações de coleta/entrega no campo.
+
+### Funcionalidades
+
+| Funcionalidade | Descrição | Endpoint |
+|----------------|-----------|----------|
+| **Selecionar data** | Seletor de data para escolher qual dia gerenciar | — |
+| **Carregar rota** | Busca rota salva para a data ou permite gerar nova | `GET /api/routexl/rota-do-dia?data=YYYY-MM-DD` |
+| **Gerar rota (RouteXL)** | Otimiza a rota com as paradas do dia via RouteXL | `POST /api/routexl/optimize` |
+| **Flip (inverter ordem)** | Inverte a ordem das paradas | `POST /api/routexl/optimize` (com skipOptimisation) |
+| **Salvar rota** | Persiste a rota otimizada no banco | `POST /api/routexl/save-route` |
+| **Ver no mapa** | Abre Google Maps (ou mapa interno) com todas as paradas | Deep link ou `react-native-maps` |
+| **Navegar para parada** | Abre Google Maps com rota até o endereço da parada | Deep link `comgooglemaps://?daddr=lat,lng` |
+| **Coletar** | Abre câmera + assinatura + confirma coleta | `POST /api/orcamentos/:id/coleta-realizada` |
+| **Entregar** | Abre assinatura digital + confirma entrega | `POST /api/orcamentos/:id/entrega-realizada` |
+
+### Tela Principal — Rota do Dia
+
+```
+┌──────────────────────────────────────┐
+│ 📅 [21/07/2026]  [🔄 Gerar Rota]     │
+├──────────────────────────────────────┤
+│ Rota • 8 paradas • 42 km • 4h30      │
+│ 🟢 4 coletas • 🔵 4 entregas          │
+│                                      │
+│ ┌── Paradas ───────────────────────┐ │
+│ │ 1 🟢 Maria — Coleta              │ │
+│ │    Rua X, 123 - 14:30h           │ │
+│ │    [✅ Coletar] [📍 Maps]        │ │
+│ ├──────────────────────────────────┤ │
+│ │ 2 🔵 João — Entrega              │ │
+│ │    Rua Y, 456 - 14:50h           │ │
+│ │    [✅ Entregar] [📍 Maps]       │ │
+│ ├──────────────────────────────────┤ │
+│ │ 3 🟢 Ana — Coleta                │ │
+│ │    Rua Z, 789 - 15:10h           │ │
+│ │    [✅ Coletar] [📍 Maps]        │ │
+│ ├──────────────────────────────────┤ │
+│ │ ...                              │ │
+│ └──────────────────────────────────┘ │
+│                                      │
+│ [🔄 Flip Rota] [💾 Salvar Rota]      │
+│ [🗺️ Ver Mapa] [📊 Resumo]            │
+└──────────────────────────────────────┘
+```
+
+### Estado das Paradas
+
+Cada parada na rota tem um status que controla sua interatividade:
+
+| Estado | Visual | Ações disponíveis |
+|--------|--------|-------------------|
+| **Pendente** | Círculo vazio (○) | Coletar / Entregar + Maps |
+| **Concluído** | Check verde (✅) | Apenas visualizar (desabilitado) |
+| **Em andamento** | Ícone pulsando | Finalizar + Maps |
+
+### Regra de Desabilitação Automática
+
+Assim que uma parada é concluída (coletada ou entregue):
+1. O status do orçamento no backend é atualizado
+2. Na rota do app, a parada fica visualmente desabilitada (check verde + campos cinza)
+3. Os botões de ação (Coletar/Entregar) desaparecem ou ficam disabled
+4. O backend retorna o status atualizado na próxima requisição `GET /api/routexl/rota-do-dia`
+5. Isso evita que o motorista tente coletar algo já coletado ou gerar confusão de endereços
+
+### Fluxo de Geração de Rota
+
+```mermaid
+flowchart TD
+    A[Motorista abre Rota do Dia] --> B{Data selecionada}
+    B --> C[App busca GET /api/routexl/rota-do-dia]
+    C --> D{Rota salva existe?}
+    D -->|Sim| E[App exibe rota salva]
+    D -->|Não| F[App exibe lista de paradas pendentes]
+    F --> G[Motorista clica Gerar Rota]
+    G --> H[App chama POST /api/routexl/optimize]
+    H --> I[RouteXL otimiza]
+    I --> J[App exibe rota otimizada]
+    J --> K{Motorista quer inverter?}
+    K -->|Sim| L[Flip: inverte ordem]
+    L --> J
+    K -->|Não| M[Motorista clica Salvar]
+    M --> N[App chama POST /api/routexl/save-route]
+    N --> E
+    E --> O[Motorista percorre rota]
+    O --> P[Em cada parada: coleta ou entrega]
+    P --> Q[Parada desabilitada na rota]
+    Q --> R{Todas concluídas?}
+    R -->|Sim| S[Rota finalizada]
+    R -->|Não| O
+```
+
+### Ações por Parada
+
+#### Coletar
+1. Motorista chega no endereço
+2. Clica em "✅ Coletar"
+3. App abre câmera (expo-camera) para foto(s) do estado inicial do tapete
+4. Cliente (ou motorista) assina digitalmente (react-native-signature-canvas)
+5. App envia `POST /api/orcamentos/:id/coleta-realizada` com fotos + assinatura
+6. Backend avança etapa 1 para "concluida" e faseAtual para `F1_COLETADO`
+7. Parada fica desabilitada na rota
+
+#### Entregar
+1. Motorista chega no endereço
+2. Clica em "✅ Entregar"
+3. Cliente assina digitalmente comprovando recebimento
+4. App envia `POST /api/orcamentos/:id/entrega-realizada` com assinatura
+5. Backend avança etapa 12 para "concluida" e faseAtual para `ENTREGUE`
+6. Parada fica desabilitada na rota
+
+#### Ver no Mapa
+- Botão "📍 Maps" abre o Google Maps (ou Apple Maps) com o endereço de destino
+- Deep link: `comgooglemaps://?daddr={latitude},{longitude}`
+- Fallback: `https://maps.google.com/?daddr={endereco}`
 
 ## 3.4 Documentação de Entrada (Expedição — Etapa 2)
 

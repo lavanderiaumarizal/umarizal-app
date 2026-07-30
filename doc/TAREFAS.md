@@ -82,21 +82,32 @@
 
 ---
 
-## Sprint 3 — Motorista (Rota do Dia + Coleta/Entrega)
+## Sprint 3 — Motorista (Rota do Dia + Coleta/Entrega + Flip)
 
-**Objetivo:** Implementar o fluxo completo do motorista: rota do dia, coleta com foto, entrega com assinatura.
+**Objetivo:** Implementar o fluxo completo do motorista: seleção de data, geração de rota (RouteXL), flip, salvamento, visualização em mapa, coleta com foto, entrega com assinatura e desabilitação automática de paradas concluídas.
+
+### Tarefas de Backend
+
+| # | Tarefa | Descrição | Status |
+|---|--------|-----------|--------|
+| B22 | **Criar rotas RouteXL para motorista** | Criar `routexl.motorista.routes.ts` ou adaptar middleware existente para aceitar perfil motorista nos endpoints de rota (optimize, save-route, rota-do-dia, geocode). **Não** permitir `enviar-confirmacoes` para motorista | 🔴 |
+| B23 | **Adicionar status de conclusão nos waypoints** | Ao retornar a rota via `GET /api/routexl/rota-do-dia`, incluir campo `concluido: boolean` em cada waypoint baseado no `faseAtual` do orçamento. Se orçamento estiver em F1_COLETADO ou ENTREGUE, waypoint = concluído | 🔴 |
 
 ### Tarefas de Frontend (App)
 
 | # | Tarefa | Descrição | Status |
 |---|--------|-----------|--------|
-| F14 | **Tela Rota do Dia** | Carregar rota do RouteXL. Lista de paradas ordenadas: ordem, cliente, endereço, tipo, horário, status. Botões Coletar/Entregar por parada | 🔴 |
+| F14 | **Tela Rota do Dia** | Seletor de data (calendário). Carregar rota do RouteXL. Se não existir rota salva, mostrar mensagem "Nenhuma rota para esta data" com botão "Gerar Rota". Lista de paradas ordenadas: ordem, cliente, endereço, tipo, horário, status. Botões Coletar/Entregar + Maps por parada. Paradas concluídas aparecem desabilitadas (check verde, botões ocultos) | 🔴 |
 | F14.1 | **Mapa da Rota (react-native-maps)** | Adicionar mapa na tela Rota do Dia mostrando todas as paradas como pins. Cores diferentes para coleta (🟢) e entrega (🔵). Linha conectando as paradas na ordem da rota. Ao tocar no pin, mostrar nome + endereço + botão navegar | 🔴 |
-| F15 | **Fluxo de Coleta** | Ao clicar "Coletar": abrir câmera (expo-camera) para foto(s) do tapete + assinatura digital. Enviar para POST /api/orcamentos/:id/coleta-realizada | 🔴 |
-| F16 | **Fluxo de Entrega** | Ao clicar "Entregar": abrir assinatura digital para o cliente assinar. Enviar para POST /api/orcamentos/:id/entrega-realizada | 🔴 |
+| F14.2 | **Gerar Rota (RouteXL)** | Botão "🔄 Gerar Rota" que busca eventos do dia via `/api/orcamentos/logistica/calendario/eventos` e chama `POST /api/routexl/optimize` com os stops. Exibir resultado otimizado. Tratar erros (limite RouteXL, sem eventos, etc.) | 🔴 |
+| F14.3 | **Flip (Inverter Ordem)** | Botão "🔄 Flip" que inverte a ordem das paradas (excluindo depot/retorno). Chama `POST /api/routexl/optimize` com `skipOptimisation: true`. O mesmo comportamento exato do `handleFlip` no `OtimizarRotaModal.jsx` do admin | 🔴 |
+| F14.4 | **Salvar Rota** | Botão "💾 Salvar Rota" que persiste a rota via `POST /api/routexl/save-route`. Após salvar, a rota fica disponível para recarregamento posterior | 🔴 |
+| F15 | **Fluxo de Coleta** | Ao clicar "Coletar": abrir câmera (expo-camera) para foto(s) do tapete + assinatura digital. Enviar para `POST /api/orcamentos/:id/coleta-realizada`. Após sucesso, parada desabilitada na rota | 🔴 |
+| F16 | **Fluxo de Entrega** | Ao clicar "Entregar": abrir assinatura digital para o cliente assinar. Enviar para `POST /api/orcamentos/:id/entrega-realizada`. Após sucesso, parada desabilitada na rota | 🔴 |
 | F17 | **Componente SignaturePad** | Tela de assinatura digital com canvas. Botão Limpar e Confirmar. Salvar como base64 | 🔴 |
 | F18 | **Componente PhotoCapture** | Câmera para fotos do tapete. Múltiplas fotos. Preview antes de enviar. Usar expo-camera | 🔴 |
-| F19 | **Integração com Google Maps** | Botão "Ver no mapa" que abre Google Maps com endereço destino via deep link (`comgooglemaps://` ou `https://maps.google.com`) | 🔴 |
+| F19 | **Integração com Google Maps** | Botão "📍 Maps" que abre Google Maps com endereço destino via deep link (`comgooglemaps://?daddr=lat,lng` ou `https://maps.google.com/?daddr=endereco`). Fallback para navegador se Google Maps não estiver instalado | 🔴 |
+| F19.1 | **Desabilitação automática de paradas** | Após coleta ou entrega bem-sucedida, atualizar o estado local da lista para marcar a parada como concluída. Ao recarregar a rota, o backend já retorna `concluido: true` nos waypoints já finalizados | 🔴 |
 
 ---
 
@@ -165,11 +176,11 @@
 |--------|-----------------|------------------|-------|
 | **1 — Fundação** | 17 (B1-B17) + 2 (B3.1) | 10 (F1-F7.2) | **29** |
 | **2 — Kanban/Etapas** | 4 (B18-B21) | 6 (F8-F13) | **10** |
-| **3 — Motorista** | 0 | 7 (F14-F19.1) | **7** |
+| **3 — Motorista** | 2 (B22-B23) | 11 (F14-F19.1) | **13** |
 | **4 — Lavagem/Secagem** | 0 | 6 (F20-F25) | **6** |
 | **5 — Expedição** | 0 | 12 (F26-F36) | **12** |
 | **6 — Testes/Build** | 0 | 8 (Q1-Q8) | **8** |
-| **Total** | **23** | **49** | **72** |
+| **Total** | **25** | **53** | **78** |
 
 ---
 
@@ -183,6 +194,10 @@ B4 + B15 + B20 → F36 (filtro de precos depende do backend)
 B4 → F5 (login depende do endpoint)
 F5 → F6 → F7 (navegação depende do login)
 F8 → F9 → F10 (telas dependem do dashboard)
+B22 + B23 → F14 (rotas motorista dependem do backend)
+F14 → F14.2 → F14.3 → F14.4 (gerar → flip → salvar)
+F14 → F15 → F16 (rota → coleta → entrega)
+F15 + F16 → F19.1 (desabilitacao automatica)
 F31..F35 → B21 (documentacao depende do endpoint)
 F14..F19 → F30 (relatório depende das ações)
 F26 → F27 (almoxarifado depende da flag)

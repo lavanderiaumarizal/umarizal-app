@@ -90,11 +90,35 @@ DELETE /api/orcamentos/:id/carregar
 Response: { success }  // Remove flag de carregado
 ```
 
-### Rota do Dia (Já existe, apenas consumir)
+### Rota do Dia — Consumida pelo App
+
+Os endpoints do RouteXL já existem no backend e serão consumidos pelo app:
+
+| Método | Endpoint | Uso no App |
+|--------|----------|------------|
+| `GET` | `/api/routexl/status` | Verificar se RouteXL está configurado |
+| `POST` | `/api/routexl/optimize` | Gerar/otimizar rota com as paradas do dia |
+| `POST` | `/api/routexl/save-route` | Salvar rota otimizada no banco |
+| `GET` | `/api/routexl/rota-do-dia?data=YYYY-MM-DD` | Carregar rota salva para uma data |
+| `GET` | `/api/routexl/rotas?dataInicio=...&dataFim=...` | Listar rotas em um período |
+| `GET` | `/api/routexl/geocode?address=...` | Geocodificar endereço (se necessário) |
+
+**Atenção:** Atualmente as rotas do RouteXL exigem autenticação de admin (`router.use(authenticate)`). Para o app de motorista será necessário:
+
+1. Criar um novo arquivo de rotas `routexl.motorista.routes.ts` com autenticação do motorista (não admin)
+2. Ou modificar o middleware existente para aceitar motoristas (usando `requirePerfil('motorista')`)
+3. A rota `POST /api/routexl/enviar-confirmacoes` DEVE permanecer admin-only (dispara WhatsApp para clientes)
+
+### Status de Coleta/Entrega na Rota
+
+Para que a parada seja desabilitada na rota após a conclusão, o app consulta o status do orçamento:
 
 ```
-GET /api/routexl/rotas?data=YYYY-MM-DD  → Rota otimizada
+GET /api/orcamentos/:id/status
+Response: { faseAtual: "F1_COLETADO", status: "COLETADO", ... }
 ```
+
+Se o orçamento já estiver em `F1_COLETADO` ou `ENTREGUE`, a parada correspondente na rota deve aparecer como concluída/desabilitada.
 
 ## 4.3 Modelo de Usuário (Motorista)
 
