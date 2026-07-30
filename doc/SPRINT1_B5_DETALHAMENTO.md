@@ -42,16 +42,35 @@ historico_fases                       etapas_producao
 ```
 
 **A B5 NÃO mexe no sistema de fases existente.** O painel admin continua funcionando exatamente como antes. A sincronização entre os dois sistemas (quando uma etapa 4 é concluída, a fase avança para F2_F3_PRODUCAO) será feita no **B6 (concluir)**.
+## 2. Auditoria Pré-Implementação (30/07/2026)
 
-```
-B1 (tabela etapas_producao) ✅ → B5 (iniciar etapa)
-B3 (multi-perfil) ✅ → B5 (requirePerfil)
-```
+Antes de implementar a B5, foi realizada uma auditoria completa no backend e site para verificar se algo já existia relacionado às 12 etapas de produção.
 
-A B5 depende:
-- Da tabela `etapas_producao` existir (B1 ✅)
-- Do middleware `requirePerfil` existir (B3 ✅)
-- Do campo `perfisApp` no JWT (B3 ✅)
+### Resultado: NADA existe — B5 é o primeiro código
+
+| Item | Existe? | Detalhes |
+|------|---------|----------|
+| Tabela `etapas_producao` (B1) | ✅ Criada | Pronta para uso |
+| Endpoint `/api/etapas/*` | ❌ **Não** | Nenhuma rota, controller ou service de etapas |
+| Validator `etapas.validator.ts` | ❌ **Não** | Precisa criar |
+| Site/Admin usando etapas | ❌ **Não** | Painel admin usa sistema de 10 fases (`historico_fases`) |
+| Self-service "etapa" | ❌ Diferente | `salvarEtapaOrcamento()` no `public.controller.ts` é sobre o fluxo de 5 etapas do orçamento self-service — **não tem relação** com as 12 etapas de produção |
+
+### Padrões existentes que a B5 DEVE seguir
+
+| Padrão | Onde | Como usar na B5 |
+|--------|------|----------------|
+| **EventoProducao** | `agendamento.controller.ts:136` | Ao iniciar etapa, criar `eventoProducao` com `tipo: "INICIO_PRODUCAO"` e `descricao` com nome da etapa |
+| **Route registration** | `routes/index.ts:2-24` | Importar `etapasRoutes` e adicionar `router.use("/etapas", etapasRoutes)` |
+| **Middleware perfil** | `middleware/permissions.ts` (B3) | Usar `requirePerfil()` para validar acesso por etapa |
+| **Error handling** | `middleware/errorHandler.ts` | Usar `AppError` com código e status HTTP |
+
+### O que NÃO existe e NÃO precisa existir
+
+- ❌ **Não** há código legado de etapas para refatorar
+- ❌ **Não** há conflito com o sistema de fases existente (10 fases do painel admin)
+- ❌ **Não** há endpoints duplicados
+- ❌ **Não** há necessidade de alterar nada no site
 
 ---
 
@@ -236,6 +255,7 @@ export async function iniciarEtapa(
   });
 
   // 5. Registra evento de produção (histórico)
+  // Segue o mesmo padrão de agendamento.controller.ts (linha 136)
   await prisma.eventoProducao.create({
     data: {
       orcamentoId,

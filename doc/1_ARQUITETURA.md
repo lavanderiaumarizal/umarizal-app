@@ -86,22 +86,48 @@ flowchart TD
 | `POST /api/orcamentos/:id/carregar` | Marcar carregado no veículo | B11 |
 | `DELETE /api/orcamentos/:id/carregar` | Remover flag de carregado | B12 |
 
-## 1.4 Modelo de Dados (12 Etapas)
+## 1.4 Relação entre os Dois Sistemas de Fases/Etapas
 
-```typescript
-interface Etapa {
-  id: number;
-  orcamentoId: string;
-  etapa: number;        // 1 a 12
-  nome: string;
-  status: 'pendente' | 'em_andamento' | 'concluida';
-  responsavel: string;  // nome do usuário que concluiu
-  concluidoEm: Date;
-  observacoes?: string;
-}
+O sistema possui **dois sistemas paralelos** que convivem sem conflito:
+
+### Sistema 1 — Fases do Painel Admin (existente, 10 fases)
+
+| Característica | Detalhe |
+|----------------|---------|
+| **Tabela** | `historico_fases` + campo `faseAtual` no `orcamentos` |
+| **Endpoint** | `GET /api/orcamentos/trilha` (Trilha da Excelência) |
+| **Avanço** | `PATCH /api/orcamentos/:id/fase` (FaseStepper) |
+| **Usado por** | Painel admin web (`/admin/trilha/`, `/admin/orcamentos/detalhes/`) |
+| **Fases** | `F0_ABORDAGEM` → `F0_ORCAMENTO` → ... → `ENTREGUE` (10 fases) |
+| **Granularidade** | Grossa — `F2_F3_PRODUCAO` engloba lavagem, higienização, secagem inteiros |
+
+### Sistema 2 — Etapas do App Mobile (NOVO, 12 etapas)
+
+| Característica | Detalhe |
+|----------------|---------|
+| **Tabela** | `etapas_producao` (criada na B1) |
+| **Endpoint** | `POST /api/etapas/:orcamentoId/iniciar` (B5) |
+| **Avanço** | `POST /api/etapas/:orcamentoId/concluir` (B6) |
+| **Usado por** | App mobile (motoristas, lavagem, secagem, expedição) |
+| **Etapas** | `Coleta` → `Documentação` → ... → `Devolução` (12 etapas) |
+| **Granularidade** | Fina — cada etapa individual (lavagem, higienização, centrifugação separados) |
+
+### Coexistência
+
+```
+Painel Admin (10 fases)             App Mobile (12 etapas)
+       │                                     │
+       ▼                                     ▼
+historico_fases                       etapas_producao
+       │                                     │
+PATCH /orcamentos/:id/fase            POST /etapas/:id/iniciar
+       │                                     │
+       └─────────── Sincronização ───────────┘
+                   (feita no B6 - concluir etapa)
+                   Ex: etapa 4 concluida → avança fase para F2_F3_PRODUCAO
 ```
 
-Não será criada uma nova tabela — as etapas serão gerenciadas através do sistema de fases existente (historico_fases + evento_producao), com a adição de micro-etapas para F2_F3_PRODUCAO.
+**A B5 (iniciar etapa) não mexe no sistema de fases existente.** O painel admin continua funcionando exatamente como antes.
 
 ## 1.5 Considerações de Segurança
 
