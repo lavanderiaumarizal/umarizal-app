@@ -23,7 +23,7 @@
 |---|--------|-----------|--------|
 | B1 | **Criar tabela `etapas_producao`** | Adicionar model Prisma `EtapaProducao` com campos: orcamentoId, etapa (1-12), nome, status, responsavel, concluidoEm, observacoes. Unique(orcamentoId, etapa). [Ver detalhamento](./SPRINT1_B1_DETALHAMENTO.md) | ✅ |
 | B2 | **Criar tabela `carregamento_veiculo`** | Adicionar model Prisma `CarregamentoVeiculo` com campos: orcamentoId (unique), carregadoEm, usuarioId, veiculo. [Ver detalhamento](./SPRINT1_B2_DETALHAMENTO.md) | ✅ |
-| B3 | **Expandir sistema de permissões para multi-perfil** | Adicionar campo `perfisApp` (JSON array) à tabela `usuarios`. Ex: `["motorista","expedicao"]`. Manter campo `nivel` existente para compatibilidade. Admin pode ter múltiplos perfis | 🔴 |
+| B3 | **Expandir sistema de permissões para multi-perfil** | Adicionar campo `perfisApp` (JSON array) à tabela `usuarios`. Ex: `["motorista","expedicao"]`. Manter campo `nivel` existente para compatibilidade. Admin pode ter múltiplos perfis. [Ver detalhamento](./SPRINT1_B3_DETALHAMENTO.md) | 🔴 |
 | B3.1 | **Criar endpoint `PATCH /api/admin/usuarios/:id/perfis`** | Endpoint admin para gerenciar perfis de um usuário. Body: `{ perfis: string[] }`. Atualiza `perfisApp` no banco | 🔴 |
 | B4 | **Criar endpoint `POST /api/auth/login-motorista`** | Login específico para motoristas com token de 30 dias. Body: { cpf, senha }. Response: { token, usuario: { id, nome, perfis, transportadorId? } }. O JWT deve conter `perfis: string[]` (array, não string única) | 🔴 |
 | B5 | **Criar endpoint `POST /api/etapas/:orcamentoId/iniciar`** | Inicia uma etapa (status = em_andamento). Body: { etapa, responsavel } | 🔴 |
