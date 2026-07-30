@@ -41,7 +41,8 @@ historico_fases                       etapas_producao
                    (feita no B6 - concluir)
 ```
 
-**A B5 NÃO mexe no sistema de fases existente.** O painel admin continua funcionando exatamente como antes. A sincronização entre os dois sistemas (quando uma etapa 4 é concluída, a fase avança para F2_F3_PRODUCAO) será feita no **B6 (concluir)**.
+**A B5 também inclui a atualização de 2 páginas do painel admin** para que o usuário já possa criar e visualizar usuários com múltiplos perfis (motorista, expedicao, lavagem, secagem). O backend já está pronto para isso (B3 + B3.1), só falta o frontend.
+
 ## 2. Auditoria Pré-Implementação (30/07/2026)
 
 Antes de implementar a B5, foi realizada uma auditoria completa no backend e site para verificar se algo já existia relacionado às 12 etapas de produção.
@@ -120,6 +121,8 @@ O sistema permite iniciar uma etapa **mesmo que etapas anteriores não estejam c
 | 3 | `src/services/etapas.service.ts` | **CRIAR** — Service com `iniciarEtapa()` + validações | 🟢 Novo |
 | 4 | `src/validators/etapas.validator.ts` | **CRIAR** — Schema Zod para `iniciarEtapaSchema` | 🟢 Novo |
 | 5 | `src/routes/index.ts` | **ALTERAR** — Adicionar `router.use("/etapas", etapasRoutes)` | 🟢 Baixo |
+| 6 | `site/src/pages/admin/usuarios/criar.astro` | **ALTERAR** — Adicionar checkboxes de perfis do app + enviar `perfisApp` | 🟢 Baixo |
+| 7 | `site/src/components/admin/UsuariosList.jsx` | **ALTERAR** — Mostrar tags coloridas com perfis, edição multi-checkbox | 🟡 Médio |
 
 ---
 
@@ -400,7 +403,100 @@ router.use("/etapas", etapasRoutes);
 
 ---
 
-## 6. Exemplo de uso
+## 5.6 Painel Admin — Formulário de Criação de Usuário
+
+### 5.6.1 `criar.astro` — Adicionar checkboxes de perfis do app
+
+O formulário atual tem apenas um `<select name="nivel">` para o nível de acesso. Vamos adicionar uma seção de checkboxes para os perfis do app (motorista, expedicao, lavagem, secagem) e enviar `perfisApp` no body.
+
+**Alteração no HTML** (após o select de nivel, antes do checkbox ativo):
+
+```html
+<!-- NOVO: Perfis do App -->
+<fieldset class="border border-gray-200 dark:border-gray-600 rounded-lg p-3">
+  <legend class="text-sm font-medium text-gray-700 dark:text-gray-300 px-1">
+    Perfis do App (opcional)
+  </legend>
+  <div class="space-y-2 mt-2">
+    <label class="flex items-center gap-2 text-sm">
+      <input type="checkbox" name="perfisApp" value="motorista" class="rounded border-gray-300" />
+      Motorista — Coletas, entregas e rota do dia
+    </label>
+    <label class="flex items-center gap-2 text-sm">
+      <input type="checkbox" name="perfisApp" value="expedicao" class="rounded border-gray-300" />
+      Expedição — Documentação, aspiração, inspeção, embalagem
+    </label>
+    <label class="flex items-center gap-2 text-sm">
+      <input type="checkbox" name="perfisApp" value="lavagem" class="rounded border-gray-300" />
+      Lavagem — Etapas 4 a 6 (lavagem, higienização, centrifugação)
+    </label>
+    <label class="flex items-center gap-2 text-sm">
+      <input type="checkbox" name="perfisApp" value="secagem" class="rounded border-gray-300" />
+      Secagem — Etapas 7 a 9 (estendagem, estufa, escovação)
+    </label>
+  </div>
+</fieldset>
+```
+
+**Alteração no JavaScript** (no body do fetch):
+
+```javascript
+// NOVO: coletar perfis marcados
+const perfisSelecionados = Array.from(
+  document.querySelectorAll('input[name="perfisApp"]:checked')
+).map(cb => cb.value);
+
+var res = await fetch('/api/usuarios/register', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+  body: JSON.stringify({
+    nome: form.nome.value,
+    email: form.email.value,
+    senha: form.senha.value,
+    nivel: form.nivel.value,
+    perfisApp: perfisSelecionados,  // NOVO
+    ativo: form.ativo.checked,
+  }),
+});
+```
+
+### 5.6.2 `UsuariosList.jsx` — Exibir tags de perfis
+
+A lista de usuários atualmente mostra apenas um badge com o `nivel`. Vamos adicionar tags coloridas para os `perfis` do app.
+
+**Alteração no componente:**
+
+```jsx
+// NOVO: paleta de cores para perfis do app
+const PERFIS_APP = [
+  { value: 'motorista', label: 'Motorista', color: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-300' },
+  { value: 'expedicao', label: 'Expedição', color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300' },
+  { value: 'lavagem', label: 'Lavagem', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' },
+  { value: 'secagem', label: 'Secagem', color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300' },
+];
+
+// Na coluna "Nível", substituir o badge único por tags multiplas:
+{/* ANTES: <span className={nivelColor(u.nivel)}>{nivelLabel(u.nivel)}</span> */}
+{/* DEPOIS: */}
+<div className="flex flex-wrap gap-1 items-center">
+  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${nivelColor(u.nivel)}`}>
+    <Shield className="w-3 h-3" />
+    {nivelLabel(u.nivel)}
+  </span>
+  {u.perfis?.filter(p => p !== u.nivel).map(p => {
+    const cfg = PERFIS_APP.find(pa => pa.value === p);
+    return cfg ? (
+      <span key={p} className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${cfg.color}`}>
+        {cfg.label}
+      </span>
+    ) : null;
+  })}
+</div>
+```
+
+> **Nota:** Ao editar o nivel no modo de edição, manter o select existente. A edição de perfis (multi-checkbox) será feita em tarefa futura (A9).
+
+---
 
 ```bash
 # Iniciar etapa 4 (Lavagem) para um orçamento
@@ -444,13 +540,15 @@ curl -s 'https://api.lavanderiaumarizal.com.br/api/etapas/SEU_ORCAMENTO_ID' \
 | T6 | Sem responsável | `{ etapa: 4 }` | 400 validação Zod |
 | T7 | Sem autenticação | Request sem token | 401 |
 | T8 | Perfil não autorizado | Lavagem tenta iniciar etapa 10 (inspeção) | 403 "Sem permissão" |
+| T9 | **Criar usuario com perfisApp no admin** | Criar usuario via `/admin/usuarios/criar/` marcando checkboxes | Usuario criado com `perfis` visiveis na lista |
+| T10 | **Lista exibe tags de perfis** | Abrir `/admin/usuarios/` | Cada usuario mostra `nivel` + tags coloridas de `perfis` |
 
 ---
 
 ## 8. Procedimento de Deploy
 
 ```bash
-# Passo 1: Desenvolvimento local
+# Passo 1: Desenvolvimento
 cd /home/lavanderia/GitHub/backend
 
 # Criar os 4 novos arquivos:
@@ -462,21 +560,34 @@ cd /home/lavanderia/GitHub/backend
 # Alterar:
 # - src/routes/index.ts (adicionar router.use)
 
+cd /home/lavanderia/GitHub/site
+# Alterar:
+# - src/pages/admin/usuarios/criar.astro (checkboxes perfisApp)
+# - src/components/admin/UsuariosList.jsx (tags de perfis)
+
 # Passo 2: Verificar compilação
+cd /home/lavanderia/GitHub/backend
 npx tsc --noEmit
 
-# Passo 3: Commit e push
+# Passo 3: Commit e push (ambos os repositorios)
+cd /home/lavanderia/GitHub/backend
 git add -A
 git commit -m "feat: endpoint POST /api/etapas/:id/iniciar"
 git push
 
-# Passo 4: Deploy via Dokploy
+cd /home/lavanderia/GitHub/site
+git add -A
+git commit -m "feat: admin usuarios - perfisApp no formulario e lista"
+git push
+
+# Passo 4: Deploy via Dokploy (backend)
 curl -s -X POST 'http://vmi1352054.contaboserver.net:3000/api/application.deploy' \
   -H 'x-api-key: TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{"applicationId": "Th6rDvBVOlkgnvMu_KD4q"}'
 
-# Passo 5: Testar (sem migration necessária — tabela etapas_producao já existe da B1)
+# Passo 5: Deploy do site (GitHub Pages - automatico no push)
+# Nao precisa de acao manual
 ```
 
 ---
