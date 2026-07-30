@@ -157,3 +157,39 @@ npx prisma migrate deploy
 2. **onDelete: Cascade** — Quando um orçamento for deletado, as etapas associadas serão deletadas automaticamente. Comportamento desejado.
 3. **Unique constraint** — `@@unique([orcamentoId, etapa])` garante que não haja duplicatas. Se o seed rodar duas vezes, pode dar conflito. O seed deve usar `upsert` ou verificar existência antes de inserir.
 4. **Índice** — `@@index([orcamentoId])` é redundante com o unique constraint (que já cria índice), mas explícito para clareza e para consultas que não usam etapa.
+
+---
+
+## 11. Lições Aprendidas na Implementação
+
+### 11.1 Migration com falha anterior bloqueia novas migrações
+
+**Problema:** A migration `20260711120000_add_gateway_and_pix_fields` havia falhado anteriormente (arquivo perdido, não commitado), bloqueando `prisma migrate deploy`.
+
+**Solução:**
+```bash
+# Marcar como rolled-back (já que o arquivo não existe)
+npx prisma migrate resolve --rolled-back 20260711120000_add_gateway_and_pix_fields
+
+# Depois aplicar as novas migrações
+npx prisma migrate deploy
+```
+
+### 11.2 Fallback no entrypoint para resiliência
+
+**Problema:** Se `prisma migrate deploy` falhar (por migração anterior pendente), a tabela não seria criada.
+
+**Solução:** Adicionar fallback no `docker-entrypoint.sh` que executa `CREATE TABLE IF NOT EXISTS` via SQL direto antes de tentar o `migrate deploy`:
+
+```bash
+echo 'CREATE TABLE IF NOT EXISTS "etapas_producao" (...)' | npx prisma db execute --stdin
+```
+
+### 11.3 Migração já existente vs Migration Manager
+
+**Problema:** Se o fallback criar a tabela antes do `migrate deploy`, este falha com "relation already exists".
+
+**Solução:** Marcar a migration como applied manualmente:
+```bash
+npx prisma migrate resolve --applied 20260730000000_add_etapas_producao
+```
