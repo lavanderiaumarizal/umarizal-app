@@ -41,15 +41,19 @@ model CarregamentoVeiculo {
 
 ## 4.2 Novos Endpoints
 
-### Autenticação para Motoristas
+### Autenticação Unificada — Login com `rememberMe`
+
+O mesmo endpoint serve painel admin e app mobile:
 
 ```
-POST /api/auth/login-motorista
-Body: { cpf, senha }
-Response: { token, motorista: { id, nome, veiculo } }
+POST /api/auth/login
+Body: { email, senha, rememberMe?: boolean }
+Response: { token, usuario: { id, nome, email, nivel, perfis, transportadorId?, veiculo? } }
 
-O token tem validade de 30 dias.
-A cada request bem-sucedido, a validade é renovada.
+- Sem rememberMe (padrão): token de 3 dias (painel admin)
+- Com rememberMe: true: token de 30 dias (app mobile)
+- Se o perfil incluir 'motorista' e houver transportador vinculado:
+  retorna transportadorId e placaVeiculo
 ```
 
 ### Gerenciamento de Etapas

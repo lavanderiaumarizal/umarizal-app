@@ -11,7 +11,7 @@ O `PUT /api/usuarios/:id` existente permite alterar todos os campos do usuário,
 ### Dependências
 
 ```
-B3 (multi-perfil) ✅ → B3.1 (endpoint perfis) → B4 (login-motorista)
+B3 (multi-perfil) ✅ → B3.1 (endpoint perfis) → B4 (login unificado rememberMe)
 ```
 
 B3.1 só pode ser implementada **após a B3** (já concluída), pois depende do campo `perfisApp` existir no banco.

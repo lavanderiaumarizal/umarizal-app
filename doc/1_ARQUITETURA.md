@@ -38,7 +38,8 @@ flowchart TD
     C -->|Inválido/Expirado| E[Tela de Login]
     B -->|Não| E
     E --> F[Informar credenciais\nCPF ou email + senha]
-    F --> G[POST /api/auth/login-motorista]
+    F --> G[POST /api/auth/login
+{ rememberMe: true }]
     G -->|Sucesso: 200| H[Salvar token\nno Keychain/AsyncStorage]
     H --> D
     G -->|Falha: 401| E
@@ -74,7 +75,7 @@ flowchart TD
 
 | Endpoint | Descrição |
 |----------|-----------|
-| `POST /api/auth/login-motorista` | Login específico para motoristas com token persistente |
+| `POST /api/auth/login` | Login unificado com `rememberMe: true` para token de 30 dias. Retorna `perfis` e `transportadorId` |
 | `POST /api/orcamentos/:id/etapa` | Avançar/substituir etapa específica (1-12) |
 | `GET /api/orcamentos/minhas-coletas` | Coletas atribuídas ao motorista logado |
 | `GET /api/orcamentos/minhas-entregas` | Entregas atribuídas ao motorista logado |

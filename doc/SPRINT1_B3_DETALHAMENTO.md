@@ -430,8 +430,7 @@ Após o deploy, testar estes cenários:
 ## 9. Dependências
 
 ```
-B3 (este) → B3.1 (endpoint perfis) → B4 (login-motorista)
+B3 (este) → B3.1 (endpoint perfis) → B4 (login unificado rememberMe)
 B3 (este) → B15 (middleware requirePerfil)
-```
 
-B3 precisa ser concluída **antes** de B4 (login-motorista) e B15 (middleware), pois ambos dependem do campo `perfisApp` e da função `getPerfisFromUsuario()`.
+B3 precisa ser concluída **antes** de B4 (login unificado) e B15 (middleware), pois ambos dependem do campo `perfisApp` e da função `getPerfisFromUsuario()`.
