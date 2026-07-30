@@ -8,7 +8,7 @@ npx create-expo-app@latest umarizal-app --template blank-typescript
 cd umarizal-app
 
 # Dependências principais
-npm install @react-navigation/native @react-navigation/stack
+npm install @react-navigation/native @react-navigation/stack @react-navigation/bottom-tabs
 npm install react-native-screens react-native-safe-area-context
 npm install @react-native-async-storage/async-storage
 npm install @react-native-community/netinfo
@@ -17,6 +17,16 @@ npm install react-native-signature-canvas  # assinatura digital
 npm install expo-camera  # fotos
 npm install expo-file-system
 npm install expo-location  # GPS para motorista
+
+# Dependências extras (recomendadas pela pesquisa complementar)
+npm install zustand                                  # Estado global (leve e tipado)
+npm install react-native-maps                        # Mapa da rota do dia
+npm install expo-secure-store                        # Armazenamento seguro do token (Keychain)
+# Alternativa ao AsyncStorage para maior performance (opcional):
+# npm install react-native-mmkv
+
+# Push notifications (opcional — pode ser adicionado depois)
+# npm install expo-notifications
 ```
 
 ## 5.2 Build Local (sem Google/Apple Store)
@@ -35,10 +45,10 @@ npx eas build --platform android --local --profile preview
 ## 5.3 Cronograma (Sprints)
 
 ### Sprint 1 — Fundação (3 dias)
-- Setup do projeto Expo
-- Tela de login + persistência (AsyncStorage)
+- Setup do projeto Expo + dependências (zustand, expo-secure-store, react-native-maps)
+- Tela de login + persistência segura (expo-secure-store para token, AsyncStorage para dados não sensíveis)
 - Dashboard por perfil
-- Integração com backend (axios)
+- Integração com backend (axios interceptors)
 
 ### Sprint 2 — Kanban e Etapas (5 dias)
 - Kanban por fase (3 colunas)
@@ -47,11 +57,11 @@ npx eas build --platform android --local --profile preview
 - Criação da tabela `etapas_producao` no backend
 
 ### Sprint 3 — Motorista (4 dias)
-- Rota do dia (RouteXL)
+- Rota do dia (RouteXL) com mapa (react-native-maps)
 - Coleta com foto + assinatura
 - Entrega com assinatura
 - Flag de carregamento no veículo
-- Integração com Google Maps
+- Integração com Google Maps (deep link)
 
 ### Sprint 4 — Lavagem e Secagem (3 dias)
 - Fila de lavagem
@@ -63,7 +73,7 @@ npx eas build --platform android --local --profile preview
 - Inspeção final (checklist)
 - Embalagem
 - Relatório do dia
-- Notificações internas
+- Notificações internas (opcional: expo-notifications)
 
 ### Sprint 6 — Testes e Ajustes (2 dias)
 - Teste com equipe real
@@ -106,7 +116,8 @@ umarizal-app/
 │   │   ├── useAuth.ts
 │   │   └── useEtapas.ts
 │   ├── store/
-│   │   └── authStore.ts       # AsyncStorage wrapper
+│   │   ├── authStore.ts       # Zustand + SecureStore (token)
+│   │   └── appStore.ts        # Zustand global (perfil, preferências)
 │   └── types/
 │       ├── orcamento.ts
 │       ├── etapa.ts
@@ -116,37 +127,59 @@ umarizal-app/
 └── package.json
 ```
 
-## 5.5 Persistência de Login
+## 5.5 Persistência de Login (Zustand + SecureStore)
 
 ```typescript
-// store/authStore.ts
+// store/authStore.ts — Zustand + expo-secure-store (token) + AsyncStorage (user)
+import { create } from 'zustand';
+import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const TOKEN_KEY = '@umarizal:token';
 const USER_KEY = '@umarizal:user';
 
-export const authStore = {
-  async saveToken(token: string) {
-    await AsyncStorage.setItem(TOKEN_KEY, token);
-  },
-  
-  async getToken(): Promise<string | null> {
-    return AsyncStorage.getItem(TOKEN_KEY);
-  },
-
-  async saveUser(user: any) {
-    await AsyncStorage.setItem(USER_KEY, JSON.stringify(user));
-  },
-
-  async getUser(): Promise<any | null> {
-    const data = await AsyncStorage.getItem(USER_KEY);
-    return data ? JSON.parse(data) : null;
-  },
-
-  async clear() {
-    await AsyncStorage.multiRemove([TOKEN_KEY, USER_KEY]);
-  }
+type AuthState = {
+  token: string | null;
+  user: any | null;
+  isLoading: boolean;
+  setToken: (token: string) => Promise<void>;
+  setUser: (user: any) => Promise<void>;
+  loadStoredAuth: () => Promise<void>;
+  logout: () => Promise<void>;
 };
+
+export const useAuthStore = create<AuthState>((set) => ({
+  token: null,
+  user: null,
+  isLoading: true,
+
+  setToken: async (token: string) => {
+    await SecureStore.setItemAsync(TOKEN_KEY, token); // Keychain seguro
+    set({ token });
+  },
+
+  setUser: async (user: any) => {
+    await AsyncStorage.setItem(USER_KEY, JSON.stringify(user));
+    set({ user });
+  },
+
+  loadStoredAuth: async () => {
+    try {
+      const token = await SecureStore.getItemAsync(TOKEN_KEY);
+      const userData = await AsyncStorage.getItem(USER_KEY);
+      const user = userData ? JSON.parse(userData) : null;
+      set({ token, user, isLoading: false });
+    } catch {
+      set({ token: null, user: null, isLoading: false });
+    }
+  },
+
+  logout: async () => {
+    await SecureStore.deleteItemAsync(TOKEN_KEY);
+    await AsyncStorage.multiRemove([USER_KEY]);
+    set({ token: null, user: null });
+  },
+}));
 ```
 
 ## 5.6 Axios Client com Interceptor
@@ -154,7 +187,7 @@ export const authStore = {
 ```typescript
 // api/client.ts
 import axios from 'axios';
-import { authStore } from '../store/authStore';
+import { useAuthStore } from '../store/authStore';
 
 const api = axios.create({
   baseURL: 'https://api.lavanderiaumarizal.com.br/api',
@@ -163,7 +196,7 @@ const api = axios.create({
 
 // Interceptor: adiciona token em toda request
 api.interceptors.request.use(async (config) => {
-  const token = await authStore.getToken();
+  const token = useAuthStore.getState().token;
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -175,8 +208,8 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     if (error.response?.status === 401) {
-      // Não desloga — apenas tenta renovar
-      // Se falhar mantém logado com token antigo
+      // Tenta renovar token com o backend
+      // Se falhar, mantém logado com token antigo
     }
     return Promise.reject(error);
   }

@@ -126,3 +126,48 @@ O app fará muitas requisições em paralelo. O backend já tem rate limiter imp
 
 - 60 requisições/minuto por IP (para o app)
 - 10 requisições/minuto para rotas de login
+
+## 4.6 Integração com RouteXL (detalhes da API)
+
+Baseado na pesquisa complementar e na documentação oficial do RouteXL:
+
+### Endpoints da API RouteXL
+
+| Rota | Método | Descrição |
+|------|--------|-----------|
+| `/api/status` | GET | Verifica status da API e limite de localizações disponível |
+| `/api/distances` | POST | Retorna matriz de distâncias entre localizações |
+| `/api/tour` | POST | Retorna rota otimizada com ordem das paradas |
+
+### Autenticação
+
+Basic Auth com username/password do plano RouteXL.
+
+### Exemplo de requisição para `/api/tour`
+
+```json
+{
+  "locations": [
+    {"address": "Lavanderia Umarizal - Base", "lat": -23.5882, "lng": -46.6387},
+    {"address": "Cliente A", "lat": -23.5505, "lng": -46.6333},
+    {"address": "Cliente B", "lat": -23.5605, "lng": -46.6433}
+  ]
+}
+```
+
+### Limitações do plano gratuito
+
+- Máximo de **10 localizações por requisição** (incluindo origem e destino).
+- Acima disso, é necessário upgrade para plano pago.
+- O backend atual já consome esta API e armazena as rotas geradas.
+
+### Fluxo de integração no app
+
+1. **App solicita**: `GET /api/routexl/rotas?data=YYYY-MM-DD`
+2. **Backend verifica**: se já existe rota salva para a data, retorna direto
+3. **Se não existe**: backend coleta endereços dos orçamentos do dia, chama RouteXL, salva e retorna
+4. **App exibe**: lista ordenada de paradas + mapa com a rota
+
+### Cache
+
+O backend já implementa cache (Redis). Rotas do dia são cacheadas por 1 hora ou até que um novo orçamento seja adicionado à data.

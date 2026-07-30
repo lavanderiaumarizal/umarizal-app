@@ -43,13 +43,15 @@
 
 | # | Tarefa | Descrição | Status |
 |---|--------|-----------|--------|
-| F1 | **Setup do projeto Expo** | `npx create-expo-app@latest umarizal-app`. Instalar dependências: react-navigation, async-storage, axios, expo-camera, expo-location, signature-canvas, netinfo | 🔴 |
+| F1 | **Setup do projeto Expo** | `npx create-expo-app@latest umarizal-app`. Instalar dependências: react-navigation, async-storage, axios, expo-camera, expo-location, signature-canvas, netinfo, **zustand, expo-secure-store, react-native-maps, @react-navigation/bottom-tabs** | 🔴 |
 | F2 | **Estrutura de pastas** | Criar estrutura: src/api, src/components, src/screens, src/navigation, src/hooks, src/store, src/types | 🔴 |
-| F3 | **Auth Store (AsyncStorage)** | Implementar store com saveToken, getToken, saveUser, getUser, clear. Usar AsyncStorage | 🔴 |
-| F4 | **Axios Client com Interceptor** | Criar instância axios com baseURL, interceptors para token e tratamento de 401 | 🔴 |
+| F3 | **Auth Store (Zustand + SecureStore)** | Implementar store com Zustand (`useAuthStore`). Token armazenado no **expo-secure-store** (Keychain). User profile no AsyncStorage. Métodos: setToken, setUser, loadStoredAuth, logout | 🔴 |
+| F4 | **Axios Client com Interceptor** | Criar instância axios com baseURL, interceptors para token (lê do Zustand store) e tratamento de 401 com tentativa de refresh automático | 🔴 |
 | F5 | **Tela de Login** | Campos: usuário (CPF/email), senha. Botão Entrar. Validar campos. Consumir POST /api/auth/login-motorista | 🔴 |
 | F6 | **Navegação** | React Navigation: se logado → Dashboard, se não → Login. Stack navigator | 🔴 |
-| F7 | **Persistência de Login** | Ao abrir o app, verificar token no AsyncStorage. Se existir, pular login. Se 401 em qualquer request, tentar refresh | 🔴 |
+| F7 | **Persistência de Login** | Ao abrir o app, chamar `useAuthStore.loadStoredAuth()`. Se token existir no SecureStore, validar com backend. Se válido, pular login. Se inválido, mostrar tela de login. **Nunca desloga a menos que usuário clique em Sair** | 🔴 |
+| F7.1 | **Configurar Zustand global** | Criar `src/store/appStore.ts` com estado global: perfil ativo, preferências de tema, última rota visitada. Usar `create()` do zustand com persistência no AsyncStorage | 🔴 |
+| F7.2 | **Expo SecureStore para token JWT** | Substituir AsyncStorage por `expo-secure-store` para armazenamento do token JWT. Implementar get/set/delete com SecureStore. AsyncStorage mantido apenas para dados não sensíveis (user profile) | 🔴 |
 
 ---
 
@@ -86,11 +88,12 @@
 | # | Tarefa | Descrição | Status |
 |---|--------|-----------|--------|
 | F14 | **Tela Rota do Dia** | Carregar rota do RouteXL. Lista de paradas ordenadas: ordem, cliente, endereço, tipo, horário, status. Botões Coletar/Entregar por parada | 🔴 |
+| F14.1 | **Mapa da Rota (react-native-maps)** | Adicionar mapa na tela Rota do Dia mostrando todas as paradas como pins. Cores diferentes para coleta (🟢) e entrega (🔵). Linha conectando as paradas na ordem da rota. Ao tocar no pin, mostrar nome + endereço + botão navegar | 🔴 |
 | F15 | **Fluxo de Coleta** | Ao clicar "Coletar": abrir câmera (expo-camera) para foto(s) do tapete + assinatura digital. Enviar para POST /api/orcamentos/:id/coleta-realizada | 🔴 |
 | F16 | **Fluxo de Entrega** | Ao clicar "Entregar": abrir assinatura digital para o cliente assinar. Enviar para POST /api/orcamentos/:id/entrega-realizada | 🔴 |
 | F17 | **Componente SignaturePad** | Tela de assinatura digital com canvas. Botão Limpar e Confirmar. Salvar como base64 | 🔴 |
 | F18 | **Componente PhotoCapture** | Câmera para fotos do tapete. Múltiplas fotos. Preview antes de enviar. Usar expo-camera | 🔴 |
-| F19 | **Integração com Google Maps** | Botão "Ver no mapa" que abre Google Maps com endereço destino | 🔴 |
+| F19 | **Integração com Google Maps** | Botão "Ver no mapa" que abre Google Maps com endereço destino via deep link (`comgooglemaps://` ou `https://maps.google.com`) | 🔴 |
 
 ---
 
@@ -124,6 +127,7 @@
 | F28 | **Inspeção Final** | Checklist de inspeção: franjas, bordas, superfície, odores. Cada item OK/NOK. Só libera se todos OK. Avança etapa 10 | 🔴 |
 | F29 | **Embalagem** | Botão "Embalar" que avança etapa 11. Opção de foto do tapete embalado | 🔴 |
 | F30 | **Tela Relatório do Dia** | Totais: coletas, entregas, por tipo de serviço, tempo médio por etapa. Botão Compartilhar resumo (texto ou PDF) | 🔴 |
+| F30.1 | **Notificações Push (opcional)** | Configurar `expo-notifications` para enviar notificações ao motorista quando uma nova rota for gerada, ou à equipe quando um tapete entrar na fila. Pode ser implementado em sprint futura | 🔴 |
 
 ---
 
@@ -150,13 +154,13 @@
 
 | Sprint | Tarefas Backend | Tarefas Frontend | Total |
 |--------|-----------------|------------------|-------|
-| **1 — Fundação** | 17 (B1-B17) | 7 (F1-F7) | **24** |
+| **1 — Fundação** | 17 (B1-B17) | 10 (F1-F7.2) | **27** |
 | **2 — Kanban/Etapas** | 2 (B18-B19) | 6 (F8-F13) | **8** |
-| **3 — Motorista** | 0 | 6 (F14-F19) | **6** |
+| **3 — Motorista** | 0 | 7 (F14-F19.1) | **7** |
 | **4 — Lavagem/Secagem** | 0 | 6 (F20-F25) | **6** |
-| **5 — Expedição** | 0 | 5 (F26-F30) | **5** |
+| **5 — Expedição** | 0 | 6 (F26-F30.1) | **6** |
 | **6 — Testes/Build** | 0 | 8 (Q1-Q8) | **8** |
-| **Total** | **19** | **38** | **57** |
+| **Total** | **19** | **43** | **62** |
 
 ---
 

@@ -56,3 +56,38 @@ export function requirePerfil(...perfis: string[]) {
 | Avançar qualquer etapa | ❌ | ❌ | ❌ | ❌ | ✅ |
 | Ver kanban completo | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Carregar no veículo | ✅ | ❌ | ❌ | ✅ | ✅ |
+
+## 6.4 Fluxo de Trabalho do Motorista
+
+```mermaid
+flowchart TD
+    A[Motorista loga no app] --> B[App exibe lista de coletas do dia]
+    B --> C[Motorista solicita rota otimizada]
+    C --> D[Backend consulta RouteXL]
+    D --> E[App exibe mapa com rota]
+    E --> F[Motorista percorre rota]
+    F --> G[Em cada parada: confirma coleta]
+    G --> H[App atualiza status no backend]
+    H --> I[Após todas as coletas: retorna à base]
+    I --> J[Motorista marca serviços como "carregados"]
+    J --> K[App exibe lista de devoluções]
+    K --> L[Motorista percorre rota de devolução]
+    L --> M[Em cada parada: confirma entrega + assinatura]
+    M --> N[App atualiza status para "devolvido"]
+```
+
+## 6.5 Fluxo de Trabalho da Equipe Interna
+
+```mermaid
+flowchart TD
+    A[Pedido chega na lavanderia] --> B[Status: Coletado]
+    B --> C[Lavagem: atualiza para "Em Lavagem"]
+    C --> D[Lavagem: atualiza para "Higienizado"]
+    D --> E[Lavagem: atualiza para "Centrifugado"]
+    E --> F[Secagem: atualiza para "Estendido"]
+    F --> G[Secagem: atualiza para "Em Estufa"]
+    G --> H[Secagem: atualiza para "Escovado"]
+    H --> I[Expedição: atualiza para "Inspeção Final"]
+    I --> J[Expedição: atualiza para "Embalado"]
+    J --> K[Expedição: atualiza para "Devolução"]
+```
