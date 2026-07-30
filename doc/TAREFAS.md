@@ -1,0 +1,187 @@
+# 📋 Tarefas — umarizal.app
+
+## Legenda de Status
+
+| Flag | Significado |
+|------|-------------|
+| 🔴 **Não Iniciada** | Tarefa ainda não começou |
+| 🟡 **Em Desenvolvimento** | Código sendo implementado |
+| 🟢 **Em Teste** | Desenvolvimento concluído, aguardando testes |
+| 🔵 **Em Homologação** | Testes aprovados, aguardando validação do usuário |
+| ✅ **Concluída** | Homologada e aprovada |
+| ⏸️ **Bloqueada** | Aguardando dependência de outra tarefa |
+
+---
+
+## Sprint 1 — Fundação (Backend + Setup do App)
+
+**Objetivo:** Preparar o backend com as novas tabelas e endpoints, e criar o esqueleto do app com login persistente.
+
+### Tarefas de Backend
+
+| # | Tarefa | Descrição | Status |
+|---|--------|-----------|--------|
+| B1 | **Criar tabela `etapas_producao`** | Adicionar model Prisma `EtapaProducao` com campos: orcamentoId, etapa (1-12), nome, status, responsavel, concluidoEm, observacoes. Unique(orcamentoId, etapa) | 🔴 |
+| B2 | **Criar tabela `carregamento_veiculo`** | Adicionar model Prisma `CarregamentoVeiculo` com campos: orcamentoId (unique), carregadoEm, usuarioId, veiculo | 🔴 |
+| B3 | **Adicionar nível `motorista` aos usuários** | Adicionar perfil `motorista` no sistema de permissões. Garantir que `POST /api/auth/login` aceite login de motoristas | 🔴 |
+| B4 | **Criar endpoint `POST /api/auth/login-motorista`** | Login específico para motoristas com token de 30 dias. Body: { cpf, senha }. Response: { token, motorista } | 🔴 |
+| B5 | **Criar endpoint `POST /api/etapas/:orcamentoId/iniciar`** | Inicia uma etapa (status = em_andamento). Body: { etapa, responsavel } | 🔴 |
+| B6 | **Criar endpoint `POST /api/etapas/:orcamentoId/concluir`** | Conclui uma etapa (status = concluida). Body: { etapa, responsavel, observacoes? }. Deve avançar a faseAtual do orçamento conforme mapeamento. Sincroniza com fases existentes | 🔴 |
+| B7 | **Criar endpoint `POST /api/etapas/:orcamentoId/retornar`** | Retorna uma etapa (status = pendente). Body: { etapa, motivo }. Registra observacao | 🔴 |
+| B8 | **Criar endpoint `GET /api/etapas/:orcamentoId`** | Retorna status de todas as 12 etapas para um orçamento | 🔴 |
+| B9 | **Criar endpoint `POST /api/orcamentos/:id/coleta-realizada`** | Marca coleta como realizada. Body: { fotos[], assinatura, observacoes? }. Avança etapa 1 | 🔴 |
+| B10 | **Criar endpoint `POST /api/orcamentos/:id/entrega-realizada`** | Marca entrega como realizada. Body: { assinatura, observacoes?, fotos[]? }. Avança etapa 12 | 🔴 |
+| B11 | **Criar endpoint `POST /api/orcamentos/:id/carregar`** | Marca tapete como carregado no veículo. Body: { veiculo? }. Cria registro em carregamento_veiculo | 🔴 |
+| B12 | **Criar endpoint `DELETE /api/orcamentos/:id/carregar`** | Remove flag de carregado no veículo | 🔴 |
+| B13 | **Criar endpoint `GET /api/orcamentos/minhas-coletas`** | Retorna coletas atribuídas ao transportador do motorista logado | 🔴 |
+| B14 | **Criar endpoint `GET /api/orcamentos/minhas-entregas`** | Retorna entregas atribuídas ao transportador do motorista logado | 🔴 |
+| B15 | **Criar middleware de perfil** | Middleware `requirePerfil(...perfis)` que verifica o perfil do usuário no JWT e retorna 403 se não tiver permissão | 🔴 |
+| B16 | **Seed de dados** | Criar script que inicializa as 12 etapas para orçamentos existentes com status adequado baseado no faseAtual | 🔴 |
+| B17 | **Ajustar rate limiter** | Garantir que o rate limiter permita 60 req/min para o app e 10 req/min para login | 🔴 |
+
+### Tarefas de Frontend (App)
+
+| # | Tarefa | Descrição | Status |
+|---|--------|-----------|--------|
+| F1 | **Setup do projeto Expo** | `npx create-expo-app@latest umarizal-app`. Instalar dependências: react-navigation, async-storage, axios, expo-camera, expo-location, signature-canvas, netinfo | 🔴 |
+| F2 | **Estrutura de pastas** | Criar estrutura: src/api, src/components, src/screens, src/navigation, src/hooks, src/store, src/types | 🔴 |
+| F3 | **Auth Store (AsyncStorage)** | Implementar store com saveToken, getToken, saveUser, getUser, clear. Usar AsyncStorage | 🔴 |
+| F4 | **Axios Client com Interceptor** | Criar instância axios com baseURL, interceptors para token e tratamento de 401 | 🔴 |
+| F5 | **Tela de Login** | Campos: usuário (CPF/email), senha. Botão Entrar. Validar campos. Consumir POST /api/auth/login-motorista | 🔴 |
+| F6 | **Navegação** | React Navigation: se logado → Dashboard, se não → Login. Stack navigator | 🔴 |
+| F7 | **Persistência de Login** | Ao abrir o app, verificar token no AsyncStorage. Se existir, pular login. Se 401 em qualquer request, tentar refresh | 🔴 |
+
+---
+
+## Sprint 2 — Kanban e Etapas
+
+**Objetivo:** Implementar o kanban de produção e o gerenciamento das 12 etapas.
+
+### Tarefas de Backend
+
+| # | Tarefa | Descrição | Status |
+|---|--------|-----------|--------|
+| B18 | **Criar endpoint `GET /api/kanban/:perfil`** | Retorna orçamentos agrupados por status/fase conforme o perfil (motorista vê coletas/entregas, lavagem vê F2, etc) | 🔴 |
+| B19 | **Criar endpoint `PUT /api/orcamentos/:id/etapa`** | Atualiza etapa específica com status e responsavel. Alternativa mais simples aos endpoints individuais | 🔴 |
+
+### Tarefas de Frontend (App)
+
+| # | Tarefa | Descrição | Status |
+|---|--------|-----------|--------|
+| F8 | **Tela Dashboard** | Cards por perfil conforme documento 3_TELAS.md. Motorista: rota+coletas+entregas. Lavagem: fila lavagem. Secagem: fila secagem. Expedição: inspeção+embalagem | 🔴 |
+| F9 | **Tela Kanban por Fase** | 3 colunas (Pendente | Em Andamento | Concluído). Cards com código, cliente, serviço, medidas, status, tempo. Scroll horizontal | 🔴 |
+| F10 | **Tela Detalhes do Tapete** | Fotos do estado inicial, dados do cliente, itens/medidas, timeline das 12 etapas, status atual, botão Avançar/Retornar | 🔴 |
+| F11 | **Componente Timeline de Etapas** | Visualização vertical das 12 etapas com ícones, check verde para concluída, azul para atual, cinza para pendente | 🔴 |
+| F12 | **Componente KanbanCard** | Card reutilizável com código, nome, serviço, medidas, badge de status, tempo decorrido | 🔴 |
+| F13 | **Componente StatusBadge** | Badge de cor para cada status (pendente=cinza, andamento=azul, concluido=verde) | 🔴 |
+
+---
+
+## Sprint 3 — Motorista (Rota do Dia + Coleta/Entrega)
+
+**Objetivo:** Implementar o fluxo completo do motorista: rota do dia, coleta com foto, entrega com assinatura.
+
+### Tarefas de Frontend (App)
+
+| # | Tarefa | Descrição | Status |
+|---|--------|-----------|--------|
+| F14 | **Tela Rota do Dia** | Carregar rota do RouteXL. Lista de paradas ordenadas: ordem, cliente, endereço, tipo, horário, status. Botões Coletar/Entregar por parada | 🔴 |
+| F15 | **Fluxo de Coleta** | Ao clicar "Coletar": abrir câmera (expo-camera) para foto(s) do tapete + assinatura digital. Enviar para POST /api/orcamentos/:id/coleta-realizada | 🔴 |
+| F16 | **Fluxo de Entrega** | Ao clicar "Entregar": abrir assinatura digital para o cliente assinar. Enviar para POST /api/orcamentos/:id/entrega-realizada | 🔴 |
+| F17 | **Componente SignaturePad** | Tela de assinatura digital com canvas. Botão Limpar e Confirmar. Salvar como base64 | 🔴 |
+| F18 | **Componente PhotoCapture** | Câmera para fotos do tapete. Múltiplas fotos. Preview antes de enviar. Usar expo-camera | 🔴 |
+| F19 | **Integração com Google Maps** | Botão "Ver no mapa" que abre Google Maps com endereço destino | 🔴 |
+
+---
+
+## Sprint 4 — Lavagem e Secagem (F2 + F3)
+
+**Objetivo:** Implementar o fluxo de produção (etapas 4 a 9).
+
+### Tarefas de Frontend (App)
+
+| # | Tarefa | Descrição | Status |
+|---|--------|-----------|--------|
+| F20 | **Fila de Lavagem** | Tela com lista de tapetes aguardando lavagem (etapa 3 concluída, etapa 4 pendente). Botão "Iniciar Lavagem" | 🔴 |
+| F21 | **Lavando Agora** | Lista de tapetes em lavagem (etapa 4 em_andamento). Botão "Concluir Lavagem" que avança para etapa 5 | 🔴 |
+| F22 | **Fila de Secagem** | Lista de tapetes aguardando secagem (etapa 6 concluída, etapa 7 pendente). Botão "Iniciar Secagem" | 🔴 |
+| F23 | **Secando Agora** | Lista de tapetes em secagem (etapa 7 em_andamento). Botão "Concluir Secagem" que avança para etapa 8, depois 9 | 🔴 |
+| F24 | **Observações por Etapa** | Campo opcional de observações ao concluir/avançar cada etapa. Ex: "Tapete com mancha persistente", "Franja desfiada" | 🔴 |
+| F25 | **Fotos de Produção** | Câmera opcional ao concluir etapas de produção. Ex: foto do tapete lavado, foto do tapete seco | 🔴 |
+
+---
+
+## Sprint 5 — Expedição e Finalização (Almoxarifado + Devolução)
+
+**Objetivo:** Implementar o almoxarifado (substituição da planilha), inspeção, embalagem e relatório.
+
+### Tarefas de Frontend (App)
+
+| # | Tarefa | Descrição | Status |
+|---|--------|-----------|--------|
+| F26 | **Tela Almoxarifado/Estoque** | Substitui a planilha manual. Lista de tapetes com checkbox de carregamento. Filtros: status (coletado/carregado/entregue), período, tipo. Busca textual | 🔴 |
+| F27 | **Flag de Carregamento** | Checkbox ao lado de cada tapete. Marcou = carregado no veículo. Desmarcou = remove flag. Consome POST/DELETE /api/orcamentos/:id/carregar | 🔴 |
+| F28 | **Inspeção Final** | Checklist de inspeção: franjas, bordas, superfície, odores. Cada item OK/NOK. Só libera se todos OK. Avança etapa 10 | 🔴 |
+| F29 | **Embalagem** | Botão "Embalar" que avança etapa 11. Opção de foto do tapete embalado | 🔴 |
+| F30 | **Tela Relatório do Dia** | Totais: coletas, entregas, por tipo de serviço, tempo médio por etapa. Botão Compartilhar resumo (texto ou PDF) | 🔴 |
+
+---
+
+## Sprint 6 — Testes, Ajustes e Build
+
+**Objetivo:** Testar com equipe real, ajustar UX e gerar APK final.
+
+### Tarefas
+
+| # | Tarefa | Descrição | Status |
+|---|--------|-----------|--------|
+| Q1 | **Teste com Motoristas** | Instalar APK no celular do motorista. Validar fluxo de coleta e entrega. Ajustar bugs | 🔴 |
+| Q2 | **Teste com Lavagem** | Validar kanban de lavagem, avanço de etapas. Ajustar UX | 🔴 |
+| Q3 | **Teste com Secagem** | Validar kanban de secagem, avanço de etapas. Ajustar UX | 🔴 |
+| Q4 | **Teste com Expedição** | Validar almoxarifado, inspeção, embalagem. Ajustar UX | 🔴 |
+| Q5 | **Ajustes de UX/UI** | Com base no feedback, ajustar cores, fontes, botões, navegação | 🔴 |
+| Q6 | **Build APK Final** | `npx eas build --platform android --local --profile preview`. Gerar APK assinado | 🔴 |
+| Q7 | **Distribuição** | Compartilhar APK via WhatsApp com instruções de instalação | 🔴 |
+| Q8 | **Documentação de Uso** | Criar manual simples com prints das telas e fluxos | 🔴 |
+
+---
+
+## Resumo por Sprint
+
+| Sprint | Tarefas Backend | Tarefas Frontend | Total |
+|--------|-----------------|------------------|-------|
+| **1 — Fundação** | 17 (B1-B17) | 7 (F1-F7) | **24** |
+| **2 — Kanban/Etapas** | 2 (B18-B19) | 6 (F8-F13) | **8** |
+| **3 — Motorista** | 0 | 6 (F14-F19) | **6** |
+| **4 — Lavagem/Secagem** | 0 | 6 (F20-F25) | **6** |
+| **5 — Expedição** | 0 | 5 (F26-F30) | **5** |
+| **6 — Testes/Build** | 0 | 8 (Q1-Q8) | **8** |
+| **Total** | **19** | **38** | **57** |
+
+---
+
+## Dependências entre tarefas
+
+```
+B1 → B2 → B3 → B4 (cadeia de backend)
+B5 → B6 → B7 → B8 (cadeia de endpoints de etapas)
+B1 + B5..B8 → B16 (seed depende das tabelas e endpoints)
+B4 → F5 (login depende do endpoint)
+F5 → F6 → F7 (navegação depende do login)
+F8 → F9 → F10 (telas dependem do dashboard)
+F14..F19 → F30 (relatório depende das ações)
+F26 → F27 (almoxarifado depende da flag)
+F20..F29 → Q1..Q4 (testes dependem das telas)
+```
+
+---
+
+## Instruções de Uso
+
+1. Comece pelas tarefas **B1 a B4** (backend fundamental)
+2. Paralelamente, inicie **F1 a F4** (setup do app)
+3. Complete o backend antes de começar o frontend que depende dele
+4. A cada tarefa concluída, atualize o status de 🔴 para 🟡 e depois 🟢
+5. Após testar, atualize para 🔵 (homologação)
+6. Somente após o usuário validar, atualize para ✅
+7. Só inicie a próxima tarefa quando a anterior estiver ✅
