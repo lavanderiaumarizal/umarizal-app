@@ -18,5 +18,5 @@ Substitui a planilha manual de controle de entrada/saída de tapetes e gerencia 
 | 6 | [`6_PERFIS_ACESSO.md`](./6_PERFIS_ACESSO.md) | Multi-perfil, visibilidade de dados, fluxos |
 | 7 | [`7_ALMOXARIFADO.md`](./7_ALMOXARIFADO.md) | Substituição da planilha manual |
 | 8 | [`8_ADMIN_PAINEL_ADEQUACOES.md`](./8_ADMIN_PAINEL_ADEQUACOES.md) | Adequações do painel admin (pós-app) |
-| — | [`TAREFAS.md`](./TAREFAS.md) | 72 tarefas em 6 sprints |
+| — | [`TAREFAS.md`](./TAREFAS.md) | 78 tarefas em 6 sprints |
 | — | [`Pesquisa-umarizal.app.md`](./Pesquisa-umarizal.app.md) | Pesquisa complementar de outra IA |
