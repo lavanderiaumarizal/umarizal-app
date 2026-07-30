@@ -1,0 +1,461 @@
+# Plano de Implementação — B5: Endpoint `POST /api/etapas/:orcamentoId/iniciar`
+
+## 1. O que precisa ser feito
+
+Criar o endpoint que inicia uma etapa de produção no sistema de 12 etapas do Padrão Umarizal. Este é o primeiro de três endpoints de gerenciamento de etapas:
+
+```
+B5 → POST /api/etapas/:orcamentoId/iniciar   (status → "em_andamento")
+B6 → POST /api/etapas/:orcamentoId/concluir  (status → "concluida")  [próximo]
+B7 → POST /api/etapas/:orcamentoId/retornar  (status → "pendente")   [próximo]
+```
+
+### Fluxo
+
+```
+App → inicia etapa → EtapaProducao.status = "em_andamento"
+                     ↓
+               Registra evento em evento_producao
+                     ↓
+               Retorna status atualizado das 12 etapas
+```
+
+---
+
+## 2. Dependências
+
+```
+B1 (tabela etapas_producao) ✅ → B5 (iniciar etapa)
+B3 (multi-perfil) ✅ → B5 (requirePerfil)
+```
+
+A B5 depende:
+- Da tabela `etapas_producao` existir (B1 ✅)
+- Do middleware `requirePerfil` existir (B3 ✅)
+- Do campo `perfisApp` no JWT (B3 ✅)
+
+---
+
+## 3. Validações e Regras de Negócio
+
+### 3.1 Validações do Request
+
+| Validação | Motivo |
+|-----------|--------|
+| `orcamentoId` deve ser UUID válido | Evita erro 500 no Prisma |
+| `etapa` deve ser inteiro entre 1 e 12 | Fora desse range não é etapa válida |
+| `responsavel` deve ser string não vazia | Obrigatório para auditoria |
+| Orçamento deve existir | 404 se não encontrado |
+| Etapa não pode estar já `em_andamento` | Evita duplicidade de início |
+
+### 3.2 Regras de Progressão
+
+O sistema permite iniciar uma etapa **mesmo que etapas anteriores não estejam concluídas** (não-blocking). A progressão forçada (só avança se a anterior foi concluída) será aplicada no **B6 (concluir)**, não no iniciar.
+
+**Motivação:** Na prática da lavanderia, às vezes uma etapa começa antes da anterior ser formalmente concluída no sistema (ex: lavagem começa enquanto documentação ainda está sendo registrada).
+
+### 3.3 Controle de Perfil
+
+| Etapa | Perfil permitido | Admin? |
+|-------|------------------|--------|
+| 1 — Coleta | `motorista` | ✅ |
+| 2 — Documentação | `expedicao` | ✅ |
+| 3 — Aspiração | `expedicao` | ✅ |
+| 4 — Lavagem | `lavagem` | ✅ |
+| 5 — Higienização | `lavagem` | ✅ |
+| 6 — Centrifugação | `lavagem` | ✅ |
+| 7 — Estendagem | `secagem` | ✅ |
+| 8 — Estufa | `secagem` | ✅ |
+| 9 — Escovação | `secagem` | ✅ |
+| 10 — Inspeção Final | `expedicao` | ✅ |
+| 11 — Embalagem | `expedicao` | ✅ |
+| 12 — Devolução | `motorista` | ✅ |
+
+---
+
+## 4. Arquivos que serão criados/alterados
+
+| # | Arquivo | Ação | Impacto |
+|---|---------|------|---------|
+| 1 | `src/routes/etapas.routes.ts` | **CRIAR** — Rotas de gerenciamento de etapas | 🟢 Novo |
+| 2 | `src/controllers/etapas.controller.ts` | **CRIAR** — Controller com `iniciarEtapa()` | 🟢 Novo |
+| 3 | `src/services/etapas.service.ts` | **CRIAR** — Service com `iniciarEtapa()` + validações | 🟢 Novo |
+| 4 | `src/validators/etapas.validator.ts` | **CRIAR** — Schema Zod para `iniciarEtapaSchema` | 🟢 Novo |
+| 5 | `src/routes/index.ts` | **ALTERAR** — Adicionar `router.use("/etapas", etapasRoutes)` | 🟢 Baixo |
+
+---
+
+## 5. Código
+
+### 5.1 Validator — `etapas.validator.ts`
+
+```typescript
+// src/validators/etapas.validator.ts
+import { z } from 'zod';
+
+export const iniciarEtapaSchema = z.object({
+  etapa: z
+    .number({ message: 'Etapa é obrigatória' })
+    .int('Etapa deve ser um número inteiro')
+    .min(1, 'Etapa deve ser entre 1 e 12')
+    .max(12, 'Etapa deve ser entre 1 e 12'),
+  responsavel: z
+    .string({ message: 'Responsável é obrigatório' })
+    .min(2, 'Responsável deve ter no mínimo 2 caracteres')
+    .max(100, 'Responsável muito longo'),
+});
+
+export type IniciarEtapaInput = z.infer<typeof iniciarEtapaSchema>;
+```
+
+### 5.2 Service — `etapas.service.ts`
+
+```typescript
+// src/services/etapas.service.ts
+import prisma from '../lib/prisma';
+import { AppError } from '../middleware/errorHandler';
+
+/**
+ * Nomes das 12 etapas do Padrão Umarizal
+ */
+export const ETAPAS_NOMES: Record<number, string> = {
+  1: 'Coleta',
+  2: 'Documentação',
+  3: 'Aspiração',
+  4: 'Lavagem',
+  5: 'Higienização',
+  6: 'Centrifugação',
+  7: 'Estendagem',
+  8: 'Estufa',
+  9: 'Escovação',
+  10: 'Inspeção Final',
+  11: 'Embalagem',
+  12: 'Devolução',
+};
+
+/**
+ * Mapeamento etapa → perfil permitido
+ */
+export const ETAPA_PERFIL: Record<number, string[]> = {
+  1: ['motorista'],
+  2: ['expedicao'],
+  3: ['expedicao'],
+  4: ['lavagem'],
+  5: ['lavagem'],
+  6: ['lavagem'],
+  7: ['secagem'],
+  8: ['secagem'],
+  9: ['secagem'],
+  10: ['expedicao'],
+  11: ['expedicao'],
+  12: ['motorista'],
+};
+
+/**
+ * Inicia uma etapa (status = em_andamento)
+ */
+export async function iniciarEtapa(
+  orcamentoId: string,
+  etapa: number,
+  responsavel: string,
+  usuarioId?: number,
+) {
+  // 1. Valida orçamento existe
+  const orcamento = await prisma.orcamento.findUnique({
+    where: { id: orcamentoId },
+    select: { id: true, codigo: true, faseAtual: true },
+  });
+
+  if (!orcamento) {
+    throw new AppError('Orçamento não encontrado', 404, 'NOT_FOUND');
+  }
+
+  // 2. Valida etapa existe
+  const nomeEtapa = ETAPAS_NOMES[etapa];
+  if (!nomeEtapa) {
+    throw new AppError(`Etapa ${etapa} não é uma etapa válida (1-12)`, 400, 'ETAPA_INVALIDA');
+  }
+
+  // 3. Verifica se já existe registro para esta etapa
+  const existente = await prisma.etapaProducao.findUnique({
+    where: { orcamentoId_etapa: { orcamentoId, etapa } },
+  });
+
+  if (existente && existente.status === 'em_andamento') {
+    throw new AppError(
+      `Etapa ${etapa} (${nomeEtapa}) já está em andamento`,
+      409,
+      'ETAPA_JA_EM_ANDAMENTO',
+    );
+  }
+
+  if (existente && existente.status === 'concluida') {
+    throw new AppError(
+      `Etapa ${etapa} (${nomeEtapa}) já foi concluída`,
+      409,
+      'ETAPA_JA_CONCLUIDA',
+    );
+  }
+
+  // 4. Cria ou atualiza o registro
+  const agora = new Date();
+  const result = await prisma.etapaProducao.upsert({
+    where: { orcamentoId_etapa: { orcamentoId, etapa } },
+    update: {
+      status: 'em_andamento',
+      responsavel,
+      concluidoEm: null,
+      observacoes: null,
+    },
+    create: {
+      orcamentoId,
+      etapa,
+      nome: nomeEtapa,
+      status: 'em_andamento',
+      responsavel,
+    },
+  });
+
+  // 5. Registra evento de produção (histórico)
+  await prisma.eventoProducao.create({
+    data: {
+      orcamentoId,
+      tipo: 'INICIO_PRODUCAO',
+      descricao: `Etapa ${etapa} (${nomeEtapa}) iniciada por ${responsavel}`,
+      usuarioId: usuarioId || null,
+    },
+  });
+
+  return result;
+}
+
+/**
+ * Retorna o status de todas as 12 etapas de um orçamento
+ */
+export async function listarEtapas(orcamentoId: string) {
+  const etapas = await prisma.etapaProducao.findMany({
+    where: { orcamentoId },
+    orderBy: { etapa: 'asc' },
+  });
+
+  // Monta objeto com todas as 12 etapas (preenche com pendente as que não existem)
+  const resultado: Record<number, { etapa: number; nome: string; status: string; responsavel?: string; concluidoEm?: Date | null; observacoes?: string | null }> = {};
+
+  for (let i = 1; i <= 12; i++) {
+    const encontrada = etapas.find(e => e.etapa === i);
+    resultado[i] = encontrada
+      ? {
+          etapa: encontrada.etapa,
+          nome: encontrada.nome,
+          status: encontrada.status,
+          responsavel: encontrada.responsavel || undefined,
+          concluidoEm: encontrada.concluidoEm,
+          observacoes: encontrada.observacoes,
+        }
+      : {
+          etapa: i,
+          nome: ETAPAS_NOMES[i] || `Etapa ${i}`,
+          status: 'pendente',
+        };
+  }
+
+  return resultado;
+}
+```
+
+### 5.3 Controller — `etapas.controller.ts`
+
+```typescript
+// src/controllers/etapas.controller.ts
+import { Request, Response, NextFunction } from 'express';
+import * as etapasService from '../services/etapas.service';
+import { sendSuccess, sendError } from '../utils/apiResponse';
+import { AppError } from '../middleware/errorHandler';
+
+/**
+ * POST /api/etapas/:orcamentoId/iniciar
+ * Inicia uma etapa de produção
+ */
+export async function iniciarEtapa(req: Request, res: Response, next: NextFunction) {
+  try {
+    const orcamentoId = String(req.params['orcamentoId']);
+    const { etapa, responsavel } = req.body;
+    const usuarioId = (req as any).user?.id as number | undefined;
+
+    const result = await etapasService.iniciarEtapa(orcamentoId, etapa, responsavel, usuarioId);
+    sendSuccess(res, result, `Etapa ${etapa} iniciada com sucesso`);
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
+ * GET /api/etapas/:orcamentoId
+ * Lista o status de todas as 12 etapas
+ */
+export async function listarEtapas(req: Request, res: Response, next: NextFunction) {
+  try {
+    const orcamentoId = String(req.params['orcamentoId']);
+    const etapas = await etapasService.listarEtapas(orcamentoId);
+    sendSuccess(res, etapas);
+  } catch (err) {
+    next(err);
+  }
+}
+```
+
+### 5.4 Routes — `etapas.routes.ts`
+
+```typescript
+// src/routes/etapas.routes.ts
+/**
+ * Rotas de Etapas de Produção
+ *
+ * POST  /api/etapas/:orcamentoId/iniciar  → Iniciar etapa
+ * GET   /api/etapas/:orcamentoId           → Listar etapas
+ */
+
+import { Router } from 'express';
+import * as etapasController from '../controllers/etapas.controller';
+import { authenticate } from '../middleware/auth';
+import { requirePerfil } from '../middleware/permissions';
+import { validate } from '../middleware/validate';
+import { iniciarEtapaSchema } from '../validators/etapas.validator';
+
+const router = Router();
+
+router.use(authenticate);
+
+router.post('/:orcamentoId/iniciar',
+  validate(iniciarEtapaSchema),
+  etapasController.iniciarEtapa,
+);
+
+router.get('/:orcamentoId',
+  etapasController.listarEtapas,
+);
+
+export default router;
+```
+
+> **Nota sobre permissão:** A validação de perfil específico por etapa será feita no **controller/service**, não na rota, pois o perfil permitido varia conforme a `etapa` no body. Um middleware de rota não consegue ler o body ainda. Implementação:
+
+```typescript
+// Dentro de etapas.service.ts — validar perfil
+const perfisPermitidos = ETAPA_PERFIL[etapa];
+const userPerfis = req.user?.perfis || [];
+if (!userPerfis.includes('admin') && !perfisPermitidos.some(p => userPerfis.includes(p))) {
+  throw new AppError('Você não tem permissão para iniciar esta etapa', 403, 'FORBIDDEN');
+}
+```
+
+### 5.5 Routes Index — Registrar novo módulo
+
+Em `src/routes/index.ts`, adicionar:
+
+```typescript
+import etapasRoutes from "./etapas.routes";
+// ...
+router.use("/etapas", etapasRoutes);
+```
+
+---
+
+## 6. Exemplo de uso
+
+```bash
+# Iniciar etapa 4 (Lavagem) para um orçamento
+curl -s -X POST 'https://api.lavanderiaumarizal.com.br/api/etapas/SEU_ORCAMENTO_ID/iniciar' \
+  -H 'Authorization: Bearer SEU_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{"etapa": 4, "responsavel": "João da Lavagem"}' | python3 -m json.tool
+
+# Resposta esperada:
+# {
+#   "success": true,
+#   "data": {
+#     "id": 1,
+#     "orcamentoId": "...",
+#     "etapa": 4,
+#     "nome": "Lavagem",
+#     "status": "em_andamento",
+#     "responsavel": "João da Lavagem",
+#     "concluidoEm": null,
+#     "observacoes": null
+#   },
+#   "message": "Etapa 4 iniciada com sucesso"
+# }
+
+# Listar etapas do orçamento
+curl -s 'https://api.lavanderiaumarizal.com.br/api/etapas/SEU_ORCAMENTO_ID' \
+  -H 'Authorization: Bearer SEU_TOKEN' | python3 -m json.tool
+```
+
+---
+
+## 7. Testes de Validação
+
+| # | Cenário | Como testar | Resultado esperado |
+|---|---------|-------------|-------------------|
+| T1 | Iniciar etapa válida | `POST /etapas/:id/iniciar { etapa: 4, responsavel: "João" }` | 200 + status="em_andamento" |
+| T2 | Etapa fora do range | `{ etapa: 0 }` ou `{ etapa: 13 }` | 400 "Etapa deve ser entre 1 e 12" |
+| T3 | Etapa já em andamento | Repetir T1 duas vezes | 409 "já está em andamento" |
+| T4 | Etapa já concluída | Tentar iniciar etapa já concluída | 409 "já foi concluída" |
+| T5 | Orçamento inexistente | `POST /etapas/uuid-invalido/iniciar` | 404 "Orçamento não encontrado" |
+| T6 | Sem responsável | `{ etapa: 4 }` | 400 validação Zod |
+| T7 | Sem autenticação | Request sem token | 401 |
+| T8 | Perfil não autorizado | Lavagem tenta iniciar etapa 10 (inspeção) | 403 "Sem permissão" |
+
+---
+
+## 8. Procedimento de Deploy
+
+```bash
+# Passo 1: Desenvolvimento local
+cd /home/lavanderia/GitHub/backend
+
+# Criar os 4 novos arquivos:
+# - src/routes/etapas.routes.ts
+# - src/controllers/etapas.controller.ts
+# - src/services/etapas.service.ts
+# - src/validators/etapas.validator.ts
+
+# Alterar:
+# - src/routes/index.ts (adicionar router.use)
+
+# Passo 2: Verificar compilação
+npx tsc --noEmit
+
+# Passo 3: Commit e push
+git add -A
+git commit -m "feat: endpoint POST /api/etapas/:id/iniciar"
+git push
+
+# Passo 4: Deploy via Dokploy
+curl -s -X POST 'http://vmi1352054.contaboserver.net:3000/api/application.deploy' \
+  -H 'x-api-key: TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{"applicationId": "Th6rDvBVOlkgnvMu_KD4q"}'
+
+# Passo 5: Testar (sem migration necessária — tabela etapas_producao já existe da B1)
+```
+
+---
+
+## 9. Riscos e Atenção
+
+| Risco | Impacto | Mitigação |
+|-------|---------|-----------|
+| **Orçamento em fase errada** 🟡 | Tentar iniciar coleta em orçamento não aprovado | A validação de `faseAtual` pode ser adicionada futuramente. Por enquanto, qualquer etapa pode ser iniciada a qualquer momento |
+| **Concorrência** 🟡 | Dois usuários iniciam a mesma etapa simultaneamente | O `@@unique([orcamentoId, etapa])` + `upsert` garante atomicidade |
+| **Perfil validation no body** 🟡 | `requirePerfil` não consegue ler o body | A validação de perfil por etapa é feita no service, não no middleware de rota |
+| **Sem migration** 🟢 | Nenhuma alteração no banco | Tabela `etapas_producao` já existe da B1 |
+| **Orçamento deletado** 🟢 | `onDelete: Cascade` na FK | Se o orçamento for deletado, as etapas são deletadas automaticamente |
+
+---
+
+## 10. Próximos passos
+
+Após a B5, o B6 (concluir etapa) e B7 (retornar etapa) seguirão a mesma estrutura, adicionando:
+- **B6**: Sincronização com `fases.service.ts` — ao concluir certas etapas, avança a `faseAtual`
+- **B7**: Registro de motivo no `observacoes` + disparo de notificação se necessário

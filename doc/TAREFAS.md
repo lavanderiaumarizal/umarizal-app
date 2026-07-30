@@ -26,7 +26,7 @@
 | B3 | **Expandir sistema de permissões para multi-perfil** | Adicionar campo `perfisApp` (JSON array) à tabela `usuarios`. Ex: `["motorista","expedicao"]`. Manter campo `nivel` existente para compatibilidade. Admin pode ter múltiplos perfis. [Ver detalhamento](./SPRINT1_B3_DETALHAMENTO.md) | ✅ |
 | B3.1 | **Criar endpoint `PATCH /api/admin/usuarios/:id/perfis`** | Endpoint admin para gerenciar perfis de um usuário. Body: `{ perfis: string[] }`. Atualiza `perfisApp` no banco. [Ver detalhamento](./SPRINT1_B3_1_DETALHAMENTO.md) | ✅ |
 | B4 | **Adicionar `rememberMe` e `transportadorId` ao login** | Adaptar `POST /api/auth/login` existente: suportar `rememberMe: true` para token de 30 dias. Se perfil incluir 'motorista', retornar `transportadorId` e `veiculo`. [Ver detalhamento](./SPRINT1_B4_DETALHAMENTO.md) | ✅ |
-| B5 | **Criar endpoint `POST /api/etapas/:orcamentoId/iniciar`** | Inicia uma etapa (status = em_andamento). Body: { etapa, responsavel } | 🔴 |
+| B5 | **Criar endpoint `POST /api/etapas/:orcamentoId/iniciar`** | Inicia uma etapa (status = em_andamento). Body: { etapa, responsavel }. 4 novos arquivos: routes, controller, service, validator. [Ver detalhamento](./SPRINT1_B5_DETALHAMENTO.md) | 🔴 |
 | B6 | **Criar endpoint `POST /api/etapas/:orcamentoId/concluir`** | Conclui uma etapa (status = concluida). Body: { etapa, responsavel, observacoes? }. Deve avançar a faseAtual do orçamento conforme mapeamento. Sincroniza com fases existentes | 🔴 |
 | B7 | **Criar endpoint `POST /api/etapas/:orcamentoId/retornar`** | Retorna uma etapa (status = pendente). Body: { etapa, motivo }. Registra observacao | 🔴 |
 | B8 | **Criar endpoint `GET /api/etapas/:orcamentoId`** | Retorna status de todas as 12 etapas para um orçamento | 🔴 |
