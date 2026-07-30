@@ -56,32 +56,35 @@ flowchart TD
 
 ## 1.3 Integração com o Backend Existente
 
-### Endpoints a serem consumidos
+### Endpoints a consumir (existentes no backend)
 
 | Endpoint | Uso |
 |----------|-----|
-| `POST /api/auth/login` | Login do motorista |
+| `POST /api/auth/login` | Login unificado com `rememberMe: true` para token 30d |
 | `GET /api/auth/me` | Dados do usuário logado |
-| `GET /api/orcamentos/trilha` | Pipeline por fase (kanban) |
+| `GET /api/orcamentos/trilha` | Pipeline por fase (kanban) — **painel admin** |
+| `PATCH /api/orcamentos/:id/fase` | Avançar fase — **painel admin** |
+| `GET /api/orcamentos/:id/fase/historico` | Histórico de fases — **painel admin** |
 | `GET /api/orcamentos?status=COLETADO` | Orçamentos em coleta |
 | `GET /api/orcamentos/:id` | Detalhes do orçamento |
 | `GET /api/orcamentos/:id/fotos` | Fotos do estado inicial |
-| `POST /api/orcamentos/:id/status` | Avançar status |
-| `PATCH /api/orcamentos/:id/status` | Atualizar status |
 | `GET /api/routexl/rotas?data=...` | Rota do dia (RouteXL) |
 | `GET /api/transportadores` | Lista de motoristas |
 
-### Endpoints a criar no backend
+### Endpoints a criar no backend (12 etapas — app mobile)
 
-| Endpoint | Descrição |
-|----------|-----------|
-| `POST /api/auth/login` | Login unificado com `rememberMe: true` para token de 30 dias. Retorna `perfis` e `transportadorId` |
-| `POST /api/orcamentos/:id/etapa` | Avançar/substituir etapa específica (1-12) |
-| `GET /api/orcamentos/minhas-coletas` | Coletas atribuídas ao motorista logado |
-| `GET /api/orcamentos/minhas-entregas` | Entregas atribuídas ao motorista logado |
-| `POST /api/orcamentos/:id/coletado` | Marcar como coletado (com foto + assinatura) |
-| `POST /api/orcamentos/:id/entregue` | Marcar como entregue (com assinatura) |
-| `GET /api/etapas/:orcamentoId` | Status de cada uma das 12 etapas |
+| Endpoint | Descrição | Tarefa |
+|----------|-----------|--------|
+| `POST /api/etapas/:orcamentoId/iniciar` | Iniciar etapa (status → em_andamento). Body: `{ etapa, responsavel }` | B5 |
+| `POST /api/etapas/:orcamentoId/concluir` | Concluir etapa (status → concluida). Sincroniza com fase existente | B6 |
+| `POST /api/etapas/:orcamentoId/retornar` | Retornar etapa (status → pendente) | B7 |
+| `GET /api/etapas/:orcamentoId` | Status de todas as 12 etapas | B8 |
+| `GET /api/orcamentos/minhas-coletas` | Coletas atribuídas ao motorista logado | B13 |
+| `GET /api/orcamentos/minhas-entregas` | Entregas atribuídas ao motorista logado | B14 |
+| `POST /api/orcamentos/:id/coleta-realizada` | Coleta com foto + assinatura | B9 |
+| `POST /api/orcamentos/:id/entrega-realizada` | Entrega com assinatura | B10 |
+| `POST /api/orcamentos/:id/carregar` | Marcar carregado no veículo | B11 |
+| `DELETE /api/orcamentos/:id/carregar` | Remover flag de carregado | B12 |
 
 ## 1.4 Modelo de Dados (12 Etapas)
 

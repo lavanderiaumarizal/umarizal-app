@@ -1,28 +1,47 @@
 # Plano de Implementação — B5: Endpoint `POST /api/etapas/:orcamentoId/iniciar`
 
-## 1. O que precisa ser feito
+## 0. Contexto: Dois Sistemas de Fases/Etapas (importante)
 
-Criar o endpoint que inicia uma etapa de produção no sistema de 12 etapas do Padrão Umarizal. Este é o primeiro de três endpoints de gerenciamento de etapas:
+O sistema atual possui **dois sistemas paralelos** que NÃO se confundem:
+
+### Sistema 1 — Fases do Painel Admin (10 fases, existente)
+
+| Característica | Detalhe |
+|----------------|---------|
+| **Endpoint** | `GET /api/orcamentos/trilha` (Trilha da Excelência) |
+| **Avanço** | `PATCH /api/orcamentos/:id/fase` (FaseStepper) |
+| **Tabela** | `historico_fases` + campo `faseAtual` no `orcamentos` |
+| **Usado por** | Painel admin web (`/admin/trilha/`, `/admin/orcamentos/detalhes/`) |
+| **Fases** | 10: `F0_ABORDAGEM` → `F0_ORCAMENTO` → ... → `ENTREGUE` |
+| **Granularidade** | Grossa — F2_F3_PRODUCAO engloba lavagem+secagem inteiros |
+
+### Sistema 2 — Etapas do App (12 etapas, NOVO — B5 em diante)
+
+| Característica | Detalhe |
+|----------------|---------|
+| **Endpoint** | `POST /api/etapas/:orcamentoId/iniciar` (B5) |
+| **Avanço** | `POST /api/etapas/:orcamentoId/concluir` (B6, futuro) |
+| **Tabela** | `etapas_producao` (criada na B1) |
+| **Usado por** | App mobile (futuro) — motoristas, lavagem, secagem, expedição |
+| **Etapas** | 12: `Coleta` → `Documentação` → ... → `Devolução` |
+| **Granularidade** | Fina — cada etapa individual (lavagem, higienização, centrifugação separados) |
+
+### Coexistência
 
 ```
-B5 → POST /api/etapas/:orcamentoId/iniciar   (status → "em_andamento")
-B6 → POST /api/etapas/:orcamentoId/concluir  (status → "concluida")  [próximo]
-B7 → POST /api/etapas/:orcamentoId/retornar  (status → "pendente")   [próximo]
+Painel Admin (10 fases)             App Mobile (12 etapas)
+       │                                     │
+       ▼                                     ▼
+PATCH /api/orcamentos/:id/fase      POST /api/etapas/:id/iniciar
+       │                                     │
+       ▼                                     ▼
+historico_fases                       etapas_producao
+       │                                     │
+       └─────────── Sincronização ───────────┘
+                   (feita no B6 - concluir)
 ```
 
-### Fluxo
-
-```
-App → inicia etapa → EtapaProducao.status = "em_andamento"
-                     ↓
-               Registra evento em evento_producao
-                     ↓
-               Retorna status atualizado das 12 etapas
-```
-
----
-
-## 2. Dependências
+**A B5 NÃO mexe no sistema de fases existente.** O painel admin continua funcionando exatamente como antes. A sincronização entre os dois sistemas (quando uma etapa 4 é concluída, a fase avança para F2_F3_PRODUCAO) será feita no **B6 (concluir)**.
 
 ```
 B1 (tabela etapas_producao) ✅ → B5 (iniciar etapa)
