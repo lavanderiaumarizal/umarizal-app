@@ -119,6 +119,6 @@ O app não substitui o sistema de fases — ele se integra a ele:
 | Etapa 2 (Documentação) | Permanece em `F1_COLETADO` (aguarda Aspiração) |
 | Etapa 3 (Aspiração) | Avança `faseAtual` para `F1_DOCUMENTACAO` |
 | Etapa 4 (Lavagem) | Avança `faseAtual` para `F2_F3_PRODUCAO` |
-| Etapa 9 (Escovação) | Avança `faseAtual` para `SECAGEM` |
+| Etapa 7 (Estendagem) | Avança `faseAtual` para `SECAGEM` |
 | Etapa 10 (Inspeção) | Avança `faseAtual` para `F4_DEVOLUCAO` |
 | Etapa 12 (Devolução) | Avança `faseAtual` para `ENTREGUE` |
