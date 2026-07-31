@@ -29,6 +29,10 @@ O painel admin em `lavanderiaumarizal.com.br/admin/usuarios/` gerencia os usuár
 
 ## 3. O que precisa mudar — Detalhado
 
+> **ATUALIZAÇÃO (30/07/2026):** As tarefas A9 e A10 já foram implementadas como parte da B5.
+> O formulário de criação e a lista de usuários agora usam perfis unificados.
+> Veja detalhes em `SPRINT1_B5_DETALHAMENTO.md` seção 5.6.
+
 ### 3.1 Backend — Schema Prisma
 
 ```prisma
