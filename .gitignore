@@ -1,6 +1,7 @@
 node_modules/
 .expo/
 dist/
+expo-env.d.ts
 *.tsbuildinfo
 *.jks
 *.p8
@@ -10,9 +11,17 @@ dist/
 *.orig.*
 web-build/
 .expo-shared/
-android/
+.kotlin/
+.android/
 ios/
+android/
 *.apk
 *.aab
 .env
 .env.local
+.env*.local
+.DS_Store
+.metro-health-check*
+npm-debug.*
+yarn-debug.*
+yarn-error.*

@@ -44,15 +44,15 @@
 
 | # | Tarefa | Descrição | Status |
 |---|--------|-----------|--------|
-| F1 | **Setup do projeto Expo** | `npx create-expo-app@latest umarizal-app`. Instalar dependências: react-navigation, async-storage, axios, expo-camera, expo-location, signature-canvas, netinfo, **zustand, expo-secure-store, react-native-maps, @react-navigation/bottom-tabs** | 🔴 |
-| F2 | **Estrutura de pastas** | Criar estrutura: src/api, src/components, src/screens, src/navigation, src/hooks, src/store, src/types | 🔴 |
-| F3 | **Auth Store (Zustand + SecureStore)** | Implementar store com Zustand (`useAuthStore`). Token armazenado no **expo-secure-store** (Keychain). User profile no AsyncStorage. Métodos: setToken, setUser, loadStoredAuth, logout | 🔴 |
-| F4 | **Axios Client com Interceptor** | Criar instância axios com baseURL, interceptors para token (lê do Zustand store) e tratamento de 401 com tentativa de refresh automático | 🔴 |
-| F5 | **Tela de Login** | Campos: email, senha. Checkbox "Manter conectado" → envia `rememberMe: true`. Botão Entrar. Consumir `POST /api/auth/login`. Ao logar, salvar token + user no SecureStore/AsyncStorage | 🔴 |
-| F6 | **Navegação** | React Navigation: se logado → Dashboard, se não → Login. Stack navigator | 🔴 |
-| F7 | **Persistência de Login** | Ao abrir o app, chamar `useAuthStore.loadStoredAuth()`. Se token existir no SecureStore, validar com backend. Se válido, pular login. Se inválido, mostrar tela de login. **Nunca desloga a menos que usuário clique em Sair** | 🔴 |
-| F7.1 | **Configurar Zustand global** | Criar `src/store/appStore.ts` com estado global: perfil ativo, preferências de tema, última rota visitada. Usar `create()` do zustand com persistência no AsyncStorage | 🔴 |
-| F7.2 | **Expo SecureStore para token JWT** | Substituir AsyncStorage por `expo-secure-store` para armazenamento do token JWT. Implementar get/set/delete com SecureStore. AsyncStorage mantido apenas para dados não sensíveis (user profile) | 🔴 |
+| F1 | **Setup do projeto Expo** | `npx create-expo-app@latest umarizal-app`. Instalar dependências: react-navigation, async-storage, axios, expo-camera, expo-location, signature-canvas, netinfo, **zustand, expo-secure-store, react-native-maps, @react-navigation/bottom-tabs** | 🔵 |
+| F2 | **Estrutura de pastas** | Criar estrutura: src/api, src/components, src/screens, src/navigation, src/hooks, src/store, src/types | 🔵 |
+| F3 | **Auth Store (Zustand + SecureStore)** | Implementar store com Zustand (`useAuthStore`). Token armazenado no **expo-secure-store** (Keychain). User profile no AsyncStorage. Métodos: setToken, setUser, loadStoredAuth, logout | 🔵 |
+| F4 | **Axios Client com Interceptor** | Criar instância axios com baseURL, interceptors para token (lê do Zustand store) e tratamento de 401 com tentativa de refresh automático | 🔵 |
+| F5 | **Tela de Login** | Campos: email, senha. Checkbox "Manter conectado" → envia `rememberMe: true`. Botão Entrar. Consumir `POST /api/auth/login`. Ao logar, salvar token + user no SecureStore/AsyncStorage | 🔵 |
+| F6 | **Navegação** | React Navigation: se logado → Dashboard, se não → Login. Stack navigator | 🔵 |
+| F7 | **Persistência de Login** | Ao abrir o app, chamar `useAuthStore.loadStoredAuth()`. Se token existir no SecureStore, validar com backend. Se válido, pular login. Se inválido, mostrar tela de login. **Nunca desloga a menos que usuário clique em Sair** | 🔵 |
+| F7.1 | **Configurar Zustand global** | Criar `src/store/appStore.ts` com estado global: perfil ativo, preferências de tema, última rota visitada. Usar `create()` do zustand com persistência no AsyncStorage | 🔵 |
+| F7.2 | **Expo SecureStore para token JWT** | Substituir AsyncStorage por `expo-secure-store` para armazenamento do token JWT. Implementar get/set/delete com SecureStore. AsyncStorage mantido apenas para dados não sensíveis (user profile) | 🔵 |
 
 ---
 
