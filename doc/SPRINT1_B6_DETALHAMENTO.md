@@ -3,7 +3,7 @@
 > **Sprint:** 1 — Fundação (Backend)
 > **Data de Conclusão:** 30/07/2026
 > **Responsável:** IA + Usuário (Orquestrador Central — Opção 1 Projeto Completo)
-> **Status:** 🔴 Não Iniciada
+> **Status:** 🔵 Em Homologação *(implementado e validado com testes automatizados em 06/08/2026 — ver `backend/src/__tests__/integration/etapas.test.ts`)*
 
 ---
 

@@ -62,13 +62,17 @@ Response: { token, usuario: { id, nome, email, nivel, perfis, transportadorId?, 
 GET  /api/etapas/:orcamentoId
 Response: { etapa_1: "concluida", etapa_2: "pendente", ... }
 
-POST /api/etapas/:orcamentoId/avancar
-Body: { etapa: number, responsavel: string, observacoes?: string }
-Response: { success, novaEtapa }
+POST /api/etapas/:orcamentoId/iniciar     (B5)
+Body: { etapa: number, responsavel: string }
+Response: { success, data: { ..., status: "em_andamento" } }
 
-POST /api/etapas/:orcamentoId/retornar
+POST /api/etapas/:orcamentoId/concluir    (B6)
+Body: { etapa: number, responsavel: string, observacoes?: string }
+Response: { success, data: { ..., status: "concluida", faseSincronizada, faseAtual } }
+
+POST /api/etapas/:orcamentoId/retornar    (B7)
 Body: { etapa: number, motivo: string }
-Response: { success }
+Response: { success, data: { ..., status: "pendente" } }
 ```
 
 ### Coleta e Entrega
