@@ -26,6 +26,7 @@ import { getOrcamento, getFotos, type Foto } from '../api/orcamentos';
 import { getEtapas, iniciarEtapa, concluirEtapa, retornarEtapa, type EtapasResponse } from '../api/etapas';
 import EtapaTimeline from '../components/EtapaTimeline';
 import StatusBadge from '../components/StatusBadge';
+import InspecaoChecklist from '../components/InspecaoChecklist';
 import { useAuthStore } from '../store/authStore';
 import type { Perfil } from '../types';
 import type { RootStackParamList } from '../navigation/AppNavigator';
@@ -70,6 +71,10 @@ export default function DetalhesOrcamentoScreen({
   const [retornandoEtapa, setRetornandoEtapa] = useState<number | null>(null);
   const [motivo, setMotivo] = useState('');
   const [acoesLoading, setAcoesLoading] = useState<number | null>(null);
+
+  // F28 — Inspeção Final (etapa 10)
+  const [mostrarInspecao, setMostrarInspecao] = useState(false);
+  const [obsInspecao, setObsInspecao] = useState('');
 
   const carregar = useCallback(async () => {
     setLoading(true);
@@ -143,6 +148,25 @@ export default function DetalhesOrcamentoScreen({
       await carregar();
     } catch {
       setErro('Não foi possível retornar a etapa.');
+    } finally {
+      setAcoesLoading(null);
+    }
+  }
+
+  /** F28 — Confirma inspeção (todos OK) e conclui a etapa 10 */
+  async function handleConfirmarInspecao(resultados: Record<string, boolean>, observacoes?: string) {
+    setAcoesLoading(10);
+    try {
+      const detalhes = Object.entries(resultados)
+        .map(([k, v]) => `${k}: ${v ? 'OK' : 'NOK'}`)
+        .join(', ');
+      const obs = [observacoes ?? '', `Inspeção: ${detalhes}`].filter(Boolean).join(' · ');
+      await concluirEtapa(orcamentoId, 10, responsavel, obs);
+      setMostrarInspecao(false);
+      setObsInspecao('');
+      await carregar();
+    } catch {
+      setErro('Não foi possível concluir a inspeção.');
     } finally {
       setAcoesLoading(null);
     }
@@ -256,7 +280,16 @@ export default function DetalhesOrcamentoScreen({
               )}
             </TouchableOpacity>
           )}
-          {atual.status === 'em_andamento' && (
+          {atual.status === 'em_andamento' && atual.numero === 10 && (
+            <TouchableOpacity
+              style={[styles.botao, styles.botaoSucesso]}
+              onPress={() => setMostrarInspecao(true)}
+              disabled={acoesLoading !== null}
+            >
+              <Text style={styles.botaoText}>🔍 Concluir Inspeção Final</Text>
+            </TouchableOpacity>
+          )}
+          {atual.status === 'em_andamento' && atual.numero !== 10 && (
             <TouchableOpacity
               style={[styles.botao, styles.botaoSucesso]}
               onPress={() => void handleConcluir(atual.numero)}
@@ -284,6 +317,27 @@ export default function DetalhesOrcamentoScreen({
         <TouchableOpacity style={styles.modalFoto} onPress={() => setFotoAmpliada(null)}>
           <Image source={{ uri: fotoAmpliada ?? undefined }} style={styles.fotoAmpliada} resizeMode="contain" />
         </TouchableOpacity>
+      </Modal>
+
+      {/* Modal: F28 — Inspeção Final (etapa 10) */}
+      <Modal visible={mostrarInspecao} transparent animationType="slide">
+        <View style={styles.modal}>
+          <View style={styles.modalCard}>
+            <InspecaoChecklist
+              observacoes={obsInspecao}
+              onSetObservacoes={setObsInspecao}
+              onConfirm={handleConfirmarInspecao}
+              enviando={acoesLoading === 10}
+            />
+            <TouchableOpacity
+              style={[styles.botao, styles.botaoCancelarModal]}
+              onPress={() => setMostrarInspecao(false)}
+              disabled={acoesLoading !== null}
+            >
+              <Text style={styles.botaoCancelarText}>Cancelar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </Modal>
 
       {/* Modal: motivo do retorno */}
@@ -368,6 +422,8 @@ const styles = StyleSheet.create({
   botaoDisabled: { opacity: 0.5 },
   botaoCancelar: { backgroundColor: colors.background, borderWidth: 1, borderColor: colors.border, flex: 1 },
   botaoCancelarText: { color: colors.textSecondary, fontWeight: 'bold' },
+  botaoCancelarModal: { backgroundColor: colors.background, borderWidth: 1, borderColor: colors.border, marginTop: 12 },
+  botaoCancelarTextModal: { color: colors.textSecondary, fontWeight: 'bold' },
   modalFoto: { flex: 1, backgroundColor: 'rgba(0,0,0,0.9)', alignItems: 'center', justifyContent: 'center' },
   fotoAmpliada: { width: '95%', height: '80%' },
   modal: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', padding: 24 },
