@@ -36,6 +36,7 @@ import {
 import { coletaRealizada, entregaRealizada } from '../api/orcamentos';
 import CameraCapture from '../components/CameraCapture';
 import SignaturePad from '../components/SignaturePad';
+import MapaRota from '../components/MapaRota';
 
 /** Formata YYYY-MM-DD local */
 function fmtData(d: Date): string {
@@ -69,6 +70,7 @@ export default function RotaDoDiaScreen() {
   const [observacoes, setObservacoes] = useState('');
   const [enviando, setEnviando] = useState(false);
   const [mostrarCamera, setMostrarCamera] = useState(false);
+  const [mostrarMapa, setMostrarMapa] = useState(false);
 
   const carregar = useCallback(async (dataAlvo: Date) => {
     setLoading(true);
@@ -239,6 +241,10 @@ export default function RotaDoDiaScreen() {
             {rota.totalDurationMinutes ?? 0} min
           </Text>
 
+          <TouchableOpacity style={styles.botaoMapa} onPress={() => setMostrarMapa(true)}>
+            <Text style={styles.botaoMapaText}>🗺️ Ver Mapa da Rota</Text>
+          </TouchableOpacity>
+
           {rota.stops.map((stop) => {
             const concluida = stop.concluido;
             const ehColeta = stop.tipo === 'COLETA';
@@ -398,6 +404,18 @@ export default function RotaDoDiaScreen() {
           </View>
         </View>
       </Modal>
+      {/* Mapa da rota (F14.1) */}
+      <Modal visible={mostrarMapa} animationType="slide" onRequestClose={() => setMostrarMapa(false)}>
+        <View style={styles.mapaWrap}>
+          <View style={styles.mapaHeader}>
+            <Text style={styles.mapaTitulo}>🗺️ Rota do Dia</Text>
+            <TouchableOpacity onPress={() => setMostrarMapa(false)}>
+              <Text style={styles.mapaFechar}>Fechar ✕</Text>
+            </TouchableOpacity>
+          </View>
+          {rota ? <MapaRota waypoints={rota.allWaypoints} /> : null}
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -432,6 +450,29 @@ const styles = StyleSheet.create({
   botaoPrimarioText: { color: '#fff', fontWeight: 'bold', fontSize: 14 },
   lista: { padding: 12, paddingBottom: 32 },
   resumo: { color: colors.textSecondary, fontSize: 12, marginBottom: 10 },
+  botaoMapa: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    borderRadius: 10,
+    paddingVertical: 10,
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  botaoMapaText: { color: colors.primary, fontWeight: 'bold', fontSize: 13 },
+  mapaWrap: { flex: 1, backgroundColor: colors.background },
+  mapaHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    backgroundColor: colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  mapaTitulo: { color: colors.text, fontSize: 16, fontWeight: 'bold' },
+  mapaFechar: { color: colors.textSecondary, fontSize: 14, fontWeight: '600' },
   parada: {
     backgroundColor: colors.surface,
     borderRadius: 12,
