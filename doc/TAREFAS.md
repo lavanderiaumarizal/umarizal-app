@@ -32,8 +32,8 @@
 | B8 | **Criar endpoint `GET /api/etapas/:orcamentoId`** | Retorna status de todas as 12 etapas para um orçamento | 🔵 |
 | B9 | **Criar endpoint `POST /api/orcamentos/:id/coleta-realizada`** | Marca coleta como realizada. Body: { fotos[], assinatura, observacoes? }. Avança etapa 1 | 🔵 |
 | B10 | **Criar endpoint `POST /api/orcamentos/:id/entrega-realizada`** | Marca entrega como realizada. Body: { assinatura, observacoes?, fotos[]? }. Avança etapa 12 | 🔵 |
-| B11 | **Criar endpoint `POST /api/orcamentos/:id/carregar`** | Marca tapete como carregado no veículo. Body: { veiculo? }. Cria registro em carregamento_veiculo | 🔴 |
-| B12 | **Criar endpoint `DELETE /api/orcamentos/:id/carregar`** | Remove flag de carregado no veículo | 🔴 |
+| B11 | **Criar endpoint `POST /api/orcamentos/:id/carregar`** | Marca tapete como carregado no veículo. Body: { veiculo? }. Cria registro em carregamento_veiculo | 🔵 |
+| B12 | **Criar endpoint `DELETE /api/orcamentos/:id/carregar`** | Remove flag de carregado no veículo | 🔵 |
 | B13 | **Criar endpoint `GET /api/orcamentos/minhas-coletas`** | Retorna coletas atribuídas ao transportador do motorista logado | 🔴 |
 | B14 | **Criar endpoint `GET /api/orcamentos/minhas-entregas`** | Retorna entregas atribuídas ao transportador do motorista logado | 🔴 |
 | B15 | **Criar middleware de perfil (multi-perfil)** | Middleware `requirePerfil(...perfis)` que aceita array de perfis. Admin sempre passa. Usuário precisa ter PELO MENOS UM dos perfis exigidos. Se `req.user.perfis` incluir 'admin', libera tudo | 🔴 |
