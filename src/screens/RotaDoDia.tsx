@@ -127,6 +127,32 @@ export default function RotaDoDiaScreen() {
     }
   }
 
+  /** F14.3 — Flip: inverte a ordem das paradas (skipOptimisation: true) */
+  async function flipRota() {
+    if (!rota || rota.stops.length === 0) return;
+    setGerando(true);
+    setErro(null);
+    try {
+      const invertidos = [...rota.stops]
+        .reverse()
+        .map((s) => ({
+          orcamentoId: s.orcamentoId,
+          tipo: s.tipo,
+          endereco: s.endereco?.logradouro ?? '',
+          codigo: s.endereco?.logradouro?.split(' - ')[0] ?? s.orcamentoId,
+          servicetime: s.tempoServicoMinutos ?? 20,
+        }));
+
+      const otimizada = await optimizeRota(invertidos, { skipOptimisation: true });
+      await saveRota(fmtData(data), otimizada, invertidos);
+      await carregar(data);
+    } catch {
+      setErro('Não foi possível inverter a rota.');
+    } finally {
+      setGerando(false);
+    }
+  }
+
   /** Abre o Google Maps na parada */
   function navegarParada(stop: Stop) {
     const endereco = stop.endereco?.logradouro ?? '';
@@ -244,6 +270,24 @@ export default function RotaDoDiaScreen() {
           <TouchableOpacity style={styles.botaoMapa} onPress={() => setMostrarMapa(true)}>
             <Text style={styles.botaoMapaText}>🗺️ Ver Mapa da Rota</Text>
           </TouchableOpacity>
+
+          {/* F14.3/F14.4 — Flip e Salvar rota */}
+          <View style={styles.rotaAcoes}>
+            <TouchableOpacity
+              style={[styles.botaoFlip, gerando && styles.botaoDisabled]}
+              onPress={() => void flipRota()}
+              disabled={gerando}
+            >
+              <Text style={styles.botaoFlipText}>🔄 Flip (inverter ordem)</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.botaoSalvar, gerando && styles.botaoDisabled]}
+              onPress={() => void gerarRota()}
+              disabled={gerando}
+            >
+              <Text style={styles.botaoSalvarText}>💾 Salvar Rota</Text>
+            </TouchableOpacity>
+          </View>
 
           {rota.stops.map((stop) => {
             const concluida = stop.concluido;
@@ -460,6 +504,27 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   botaoMapaText: { color: colors.primary, fontWeight: 'bold', fontSize: 13 },
+  rotaAcoes: { flexDirection: 'row', gap: 8, marginBottom: 12 },
+  botaoFlip: {
+    flex: 1,
+    backgroundColor: colors.activeBg,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    borderRadius: 10,
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  botaoFlipText: { color: colors.active, fontWeight: 'bold', fontSize: 12 },
+  botaoSalvar: {
+    flex: 1,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 10,
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  botaoSalvarText: { color: colors.textSecondary, fontWeight: 'bold', fontSize: 12 },
   mapaWrap: { flex: 1, backgroundColor: colors.background },
   mapaHeader: {
     flexDirection: 'row',
