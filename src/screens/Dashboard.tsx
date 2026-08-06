@@ -45,10 +45,15 @@ interface CardDef {
   value: number | string | null;
   subtitle?: string;
   accent: string;
+  onPress?: () => void;
 }
 
 /** Cards por perfil — doc 3_TELAS */
-function cardsDoPerfil(perfil: Perfil, dados: { coletas: number | null; entregas: number | null }): CardDef[] {
+function cardsDoPerfil(
+  perfil: Perfil,
+  dados: { coletas: number | null; entregas: number | null },
+  onAbrirRota?: () => void,
+): CardDef[] {
   switch (perfil) {
     case 'motorista':
       return [
@@ -56,8 +61,9 @@ function cardsDoPerfil(perfil: Perfil, dados: { coletas: number | null; entregas
           icon: '🚚',
           title: 'Minha Rota de Hoje',
           value: null,
-          subtitle: 'Sprint 3 (RouteXL)',
+          subtitle: 'RouteXL · tocar para abrir',
           accent: colors.primary,
+          onPress: onAbrirRota,
         },
         {
           icon: '📦',
@@ -152,7 +158,7 @@ export default function DashboardScreen() {
     setRefreshing(false);
   }, [carregarDados]);
 
-  const cards = cardsDoPerfil(perfil, dados);
+  const cards = cardsDoPerfil(perfil, dados, () => navigation.navigate('RotaDoDia'));
 
   return (
     <ScrollView

@@ -2,7 +2,7 @@
  * components/DashboardCard.tsx — Card reutilizável do dashboard (F8)
  */
 
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { colors } from '../theme';
 
 interface Props {
@@ -12,11 +12,17 @@ interface Props {
   value: number | string | null;
   subtitle?: string;
   accent?: string;
+  onPress?: () => void;
 }
 
-export default function DashboardCard({ icon, title, value, subtitle, accent = colors.primary }: Props) {
+export default function DashboardCard({ icon, title, value, subtitle, accent = colors.primary, onPress }: Props) {
   return (
-    <View style={[styles.card, { borderLeftColor: accent }]}>
+    <TouchableOpacity
+      style={[styles.card, { borderLeftColor: accent }]}
+      onPress={onPress}
+      activeOpacity={onPress ? 0.7 : 1}
+      disabled={!onPress}
+    >
       <Text style={styles.icon}>{icon}</Text>
       <Text style={styles.value} numberOfLines={1}>
         {value === null ? '—' : value}
@@ -25,7 +31,7 @@ export default function DashboardCard({ icon, title, value, subtitle, accent = c
         {title}
       </Text>
       {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
-    </View>
+    </TouchableOpacity>
   );
 }
 

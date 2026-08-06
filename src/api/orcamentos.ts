@@ -89,3 +89,21 @@ export interface OrcamentoDetalhe extends OrcamentoResumo {
   cliente: OrcamentoResumo['cliente'] & { email?: string | null };
   itens: ItemResumo[];
 }
+
+/** POST /api/orcamentos/:id/coleta-realizada (B9) */
+export async function coletaRealizada(
+  id: string,
+  dados: { fotos: string[]; assinatura: string; observacoes?: string },
+): Promise<ApiSuccessResponse<any>> {
+  const { data } = await api.post(`/orcamentos/${id}/coleta-realizada`, dados);
+  return data;
+}
+
+/** POST /api/orcamentos/:id/entrega-realizada (B10) */
+export async function entregaRealizada(
+  id: string,
+  dados: { assinatura: string; observacoes?: string; fotos?: string[] },
+): Promise<ApiSuccessResponse<any>> {
+  const { data } = await api.post(`/orcamentos/${id}/entrega-realizada`, dados);
+  return data;
+}

@@ -90,14 +90,14 @@
 
 | # | Tarefa | Descrição | Status |
 |---|--------|-----------|--------|
-| B22 | **Criar rotas RouteXL para motorista** | Criar `routexl.motorista.routes.ts` ou adaptar middleware existente para aceitar perfil motorista nos endpoints de rota (optimize, save-route, rota-do-dia, geocode). **Não** permitir `enviar-confirmacoes` para motorista | 🔴 |
-| B23 | **Adicionar status de conclusão nos waypoints** | Ao retornar a rota via `GET /api/routexl/rota-do-dia`, incluir campo `concluido: boolean` em cada waypoint baseado no `faseAtual` do orçamento. Se orçamento estiver em F1_COLETADO ou ENTREGUE, waypoint = concluído | 🔴 |
+| B22 | **Criar rotas RouteXL para motorista** | Criar `routexl.motorista.routes.ts` ou adaptar middleware existente para aceitar perfil motorista nos endpoints de rota (optimize, save-route, rota-do-dia, geocode). **Não** permitir `enviar-confirmacoes` para motorista | 🔵 |
+| B23 | **Adicionar status de conclusão nos waypoints** | Ao retornar a rota via `GET /api/routexl/rota-do-dia`, incluir campo `concluido: boolean` em cada waypoint baseado no `faseAtual` do orçamento. Se orçamento estiver em F1_COLETADO ou ENTREGUE, waypoint = concluído | 🔵 |
 
 ### Tarefas de Frontend (App)
 
 | # | Tarefa | Descrição | Status |
 |---|--------|-----------|--------|
-| F14 | **Tela Rota do Dia** | Seletor de data (calendário). Carregar rota do RouteXL. Se não existir rota salva, mostrar mensagem "Nenhuma rota para esta data" com botão "Gerar Rota". Lista de paradas ordenadas: ordem, cliente, endereço, tipo, horário, status. Botões Coletar/Entregar + Maps por parada. Paradas concluídas aparecem desabilitadas (check verde, botões ocultos) | 🔴 |
+| F14 | **Tela Rota do Dia** | Seletor de data (calendário). Carregar rota do RouteXL. Se não existir rota salva, mostrar mensagem "Nenhuma rota para esta data" com botão "Gerar Rota". Lista de paradas ordenadas: ordem, cliente, endereço, tipo, horário, status. Botões Coletar/Entregar + Maps por parada. Paradas concluídas aparecem desabilitadas (check verde, botões ocultos) | 🔵 |
 | F14.1 | **Mapa da Rota (react-native-maps)** | Adicionar mapa na tela Rota do Dia mostrando todas as paradas como pins. Cores diferentes para coleta (🟢) e entrega (🔵). Linha conectando as paradas na ordem da rota. Ao tocar no pin, mostrar nome + endereço + botão navegar | 🔴 |
 | F14.2 | **Gerar Rota (RouteXL)** | Botão "🔄 Gerar Rota" que busca eventos do dia via `/api/orcamentos/logistica/calendario/eventos` e chama `POST /api/routexl/optimize` com os stops. Exibir resultado otimizado. Tratar erros (limite RouteXL, sem eventos, etc.) | 🔴 |
 | F14.3 | **Flip (Inverter Ordem)** | Botão "🔄 Flip" que inverte a ordem das paradas (excluindo depot/retorno). Chama `POST /api/routexl/optimize` com `skipOptimisation: true`. O mesmo comportamento exato do `handleFlip` no `OtimizarRotaModal.jsx` do admin | 🔴 |
