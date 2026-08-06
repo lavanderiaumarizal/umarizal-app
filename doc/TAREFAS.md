@@ -30,7 +30,7 @@
 | B6 | **Criar endpoint `POST /api/etapas/:orcamentoId/concluir`** | Conclui uma etapa (status = concluida). Body: { etapa, responsavel, observacoes? }. Deve avançar a faseAtual do orçamento conforme mapeamento. Sincroniza com fases existentes | 🔵 |
 | B7 | **Criar endpoint `POST /api/etapas/:orcamentoId/retornar`** | Retorna uma etapa (status = pendente). Body: { etapa, motivo }. Registra observacao | 🔵 |
 | B8 | **Criar endpoint `GET /api/etapas/:orcamentoId`** | Retorna status de todas as 12 etapas para um orçamento | 🔵 |
-| B9 | **Criar endpoint `POST /api/orcamentos/:id/coleta-realizada`** | Marca coleta como realizada. Body: { fotos[], assinatura, observacoes? }. Avança etapa 1 | 🔴 |
+| B9 | **Criar endpoint `POST /api/orcamentos/:id/coleta-realizada`** | Marca coleta como realizada. Body: { fotos[], assinatura, observacoes? }. Avança etapa 1 | 🔵 |
 | B10 | **Criar endpoint `POST /api/orcamentos/:id/entrega-realizada`** | Marca entrega como realizada. Body: { assinatura, observacoes?, fotos[]? }. Avança etapa 12 | 🔴 |
 | B11 | **Criar endpoint `POST /api/orcamentos/:id/carregar`** | Marca tapete como carregado no veículo. Body: { veiculo? }. Cria registro em carregamento_veiculo | 🔴 |
 | B12 | **Criar endpoint `DELETE /api/orcamentos/:id/carregar`** | Remove flag de carregado no veículo | 🔴 |
