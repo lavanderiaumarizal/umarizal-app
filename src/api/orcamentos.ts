@@ -107,3 +107,67 @@ export async function entregaRealizada(
   const { data } = await api.post(`/orcamentos/${id}/entrega-realizada`, dados);
   return data;
 }
+
+/** Item do almoxarifado (F26) */
+export interface TapeteAlmoxarifado {
+  id: string;
+  codigo: string;
+  status: string;
+  faseAtual: string;
+  dataColetaAgendada: string | null;
+  dataEntregaAgendada: string | null;
+  dataColetaRealizada: string | null;
+  dataEntregaRealizada: string | null;
+  observacoes: string | null;
+  cliente: {
+    id: string;
+    nome: string;
+    telefone: string | null;
+    endereco: string | null;
+    numero: string | null;
+    complemento: string | null;
+    bairro: string | null;
+    cidade: string | null;
+    uf: string | null;
+  };
+  itens: Array<{
+    id: string;
+    servicoNome: string | null;
+    categoriaNome: string | null;
+    largura: number | null;
+    comprimento: number | null;
+    quantidade: number;
+    opcaoNome: string | null;
+    escalaNome: string | null;
+  }>;
+  carregamentoVeiculo: {
+    carregadoEm: string;
+    veiculo: string;
+    usuario: { nome: string };
+  } | null;
+}
+
+/** GET /api/orcamentos/almoxarifado (F26) */
+export async function getAlmoxarifado(params: {
+  q?: string;
+  status?: string;
+  periodo?: string;
+  tipo?: string;
+}): Promise<TapeteAlmoxarifado[]> {
+  const { data } = await api.get<ApiSuccessResponse<TapeteAlmoxarifado[]>>('/orcamentos/almoxarifado', {
+    params,
+  });
+  return data.data;
+}
+
+/** POST /api/orcamentos/:id/carregar (B11) */
+export async function carregarOrcamento(id: string, veiculo = 'principal'): Promise<any> {
+  const { data } = await api.post(`/orcamentos/${id}/carregar`, { veiculo });
+  return data;
+}
+
+/** DELETE /api/orcamentos/:id/carregar (B12) */
+export async function descarregarOrcamento(id: string): Promise<any> {
+  const { data } = await api.delete(`/orcamentos/${id}/carregar`);
+  return data;
+}

@@ -136,8 +136,8 @@
 
 | # | Tarefa | Descrição | Status |
 |---|--------|-----------|--------|
-| F26 | **Tela Almoxarifado/Estoque** | Substitui a planilha manual. Lista de tapetes com checkbox de carregamento. Filtros: status (coletado/carregado/entregue), período, tipo. Busca textual. **Sem preços** | 🔴 |
-| F27 | **Flag de Carregamento** | Checkbox ao lado de cada tapete. Marcou = carregado no veículo. Desmarcou = remove flag. Consome POST/DELETE /api/orcamentos/:id/carregar | 🔴 |
+| F26 | **Tela Almoxarifado/Estoque** | Substitui a planilha manual. Lista de tapetes com checkbox de carregamento. Filtros: status (coletado/carregado/entregue), período, tipo. Busca textual. **Sem preços** | 🔵 |
+| F27 | **Flag de Carregamento** | Checkbox ao lado de cada tapete. Marcou = carregado no veículo. Desmarcou = remove flag. Consome POST/DELETE /api/orcamentos/:id/carregar | 🔵 |
 | F28 | **Inspeção Final** | Checklist de inspeção: franjas, bordas, superfície, odores. Cada item OK/NOK. Só libera se todos OK. Avança etapa 10 | 🔴 |
 | F29 | **Embalagem** | Botão "Embalar" que avança etapa 11. Opção de foto do tapete embalado | 🔴 |
 | F30 | **Tela Relatório do Dia** | Totais: coletas, entregas, por tipo de serviço, tempo médio por etapa. Botão Compartilhar resumo (texto ou PDF). **Admin vê valores; demais perfis veem apenas quantidades** | 🔴 |

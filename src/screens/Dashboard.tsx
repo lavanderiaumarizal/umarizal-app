@@ -222,6 +222,16 @@ export default function DashboardScreen() {
         <Text style={styles.kanbanButtonText}>🎯 Abrir Kanban de Produção</Text>
       </TouchableOpacity>
 
+      {/* Acesso ao almoxarifado (admin + motorista + expedição) */}
+      {perfis.some((p) => ['admin', 'motorista', 'expedicao'].includes(p)) && (
+        <TouchableOpacity
+          style={styles.almoxarifadoButton}
+          onPress={() => navigation.navigate('Almoxarifado')}
+        >
+          <Text style={styles.almoxarifadoButtonText}>📦 Almoxarifado / Estoque</Text>
+        </TouchableOpacity>
+      )}
+
       <TouchableOpacity style={styles.logout} onPress={() => void logout()}>
         <Text style={styles.logoutText}>Sair</Text>
       </TouchableOpacity>
@@ -330,6 +340,20 @@ const styles = StyleSheet.create({
   },
   kanbanButtonText: {
     color: colors.active,
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+  almoxarifadoButton: {
+    backgroundColor: 'rgba(217, 119, 6, 0.12)',
+    borderWidth: 1,
+    borderColor: colors.warning,
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  almoxarifadoButtonText: {
+    color: colors.warning,
     fontWeight: 'bold',
     fontSize: 14,
   },
