@@ -27,6 +27,7 @@ import { getEtapas, iniciarEtapa, concluirEtapa, retornarEtapa, type EtapasRespo
 import EtapaTimeline from '../components/EtapaTimeline';
 import StatusBadge from '../components/StatusBadge';
 import InspecaoChecklist from '../components/InspecaoChecklist';
+import CameraCapture from '../components/CameraCapture';
 import { useAuthStore } from '../store/authStore';
 import type { Perfil } from '../types';
 import type { RootStackParamList } from '../navigation/AppNavigator';
@@ -75,6 +76,12 @@ export default function DetalhesOrcamentoScreen({
   // F28 — Inspeção Final (etapa 10)
   const [mostrarInspecao, setMostrarInspecao] = useState(false);
   const [obsInspecao, setObsInspecao] = useState('');
+
+  // F29 — Embalagem (etapa 11) com foto opcional
+  const [mostrarEmbalagem, setMostrarEmbalagem] = useState(false);
+  const [obsEmbalagem, setObsEmbalagem] = useState('');
+  const [fotoEmbalagem, setFotoEmbalagem] = useState<string | null>(null);
+  const [mostrarCameraEmbalagem, setMostrarCameraEmbalagem] = useState(false);
 
   const carregar = useCallback(async () => {
     setLoading(true);
@@ -148,6 +155,23 @@ export default function DetalhesOrcamentoScreen({
       await carregar();
     } catch {
       setErro('Não foi possível retornar a etapa.');
+    } finally {
+      setAcoesLoading(null);
+    }
+  }
+
+  /** F29 — Conclui a embalagem (etapa 11) com foto opcional */
+  async function handleConfirmarEmbalagem() {
+    setAcoesLoading(11);
+    try {
+      const obs = obsEmbalagem.trim() ? obsEmbalagem.trim() : undefined;
+      await concluirEtapa(orcamentoId, 11, responsavel, obs);
+      setMostrarEmbalagem(false);
+      setObsEmbalagem('');
+      setFotoEmbalagem(null);
+      await carregar();
+    } catch {
+      setErro('Não foi possível concluir a embalagem.');
     } finally {
       setAcoesLoading(null);
     }
@@ -289,6 +313,15 @@ export default function DetalhesOrcamentoScreen({
               <Text style={styles.botaoText}>🔍 Concluir Inspeção Final</Text>
             </TouchableOpacity>
           )}
+          {atual.status === 'em_andamento' && atual.numero === 11 && (
+            <TouchableOpacity
+              style={[styles.botao, styles.botaoEmbalagem]}
+              onPress={() => setMostrarEmbalagem(true)}
+              disabled={acoesLoading !== null}
+            >
+              <Text style={styles.botaoText}>📦 Embalar tapete</Text>
+            </TouchableOpacity>
+          )}
           {atual.status === 'em_andamento' && atual.numero !== 10 && (
             <TouchableOpacity
               style={[styles.botao, styles.botaoSucesso]}
@@ -317,6 +350,81 @@ export default function DetalhesOrcamentoScreen({
         <TouchableOpacity style={styles.modalFoto} onPress={() => setFotoAmpliada(null)}>
           <Image source={{ uri: fotoAmpliada ?? undefined }} style={styles.fotoAmpliada} resizeMode="contain" />
         </TouchableOpacity>
+      </Modal>
+
+      {/* Modal: F29 — Embalagem (etapa 11) */}
+      <Modal visible={mostrarEmbalagem} transparent animationType="slide">
+        <View style={styles.modal}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>📦 Embalar tapete</Text>
+            <Text style={styles.modalSub}>Conclui a etapa 11 (Embalagem)</Text>
+
+            <View style={styles.embalagemFotoRow}>
+              {fotoEmbalagem ? (
+                <View style={styles.embalagemFotoTaken}>
+                  <Text style={styles.embalagemFotoTakenText}>📷 Foto ✓</Text>
+                </View>
+              ) : null}
+              <TouchableOpacity
+                style={styles.botaoCamera}
+                onPress={() => setMostrarCameraEmbalagem(true)}
+                disabled={acoesLoading !== null}
+              >
+                <Text style={styles.botaoCameraText}>📷 Foto do tapete embalado</Text>
+              </TouchableOpacity>
+            </View>
+
+            <TextInput
+              style={styles.modalInput}
+              placeholder="Observações (opcional)"
+              placeholderTextColor={colors.textMuted}
+              value={obsEmbalagem}
+              onChangeText={setObsEmbalagem}
+              multiline
+              editable={acoesLoading === null}
+            />
+
+            <View style={styles.modalBotoes}>
+              <TouchableOpacity
+                style={[styles.botao, styles.botaoCancelar]}
+                onPress={() => {
+                  setMostrarEmbalagem(false);
+                  setObsEmbalagem('');
+                  setFotoEmbalagem(null);
+                }}
+                disabled={acoesLoading !== null}
+              >
+                <Text style={styles.botaoCancelarText}>Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.botao, styles.botaoSucesso, acoesLoading !== null && styles.botaoDisabled]}
+                onPress={() => void handleConfirmarEmbalagem()}
+                disabled={acoesLoading !== null}
+              >
+                {acoesLoading === 11 ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.botaoText}>Confirmar embalagem</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Câmera da embalagem */}
+      <Modal
+        visible={mostrarCameraEmbalagem}
+        animationType="slide"
+        onRequestClose={() => setMostrarCameraEmbalagem(false)}
+      >
+        <CameraCapture
+          onCapture={(base64) => {
+            setFotoEmbalagem(base64);
+            setMostrarCameraEmbalagem(false);
+          }}
+          onClose={() => setMostrarCameraEmbalagem(false)}
+        />
       </Modal>
 
       {/* Modal: F28 — Inspeção Final (etapa 10) */}
@@ -416,6 +524,7 @@ const styles = StyleSheet.create({
   botao: { borderRadius: 10, paddingVertical: 13, alignItems: 'center', marginTop: 8 },
   botaoPrimario: { backgroundColor: primaryGradient[1] },
   botaoSucesso: { backgroundColor: colors.success },
+  botaoEmbalagem: { backgroundColor: colors.brandBlueLight },
   botaoRetornar: { backgroundColor: colors.background, borderWidth: 1, borderColor: colors.border },
   botaoRetornarText: { color: colors.textSecondary, fontWeight: 'bold', fontSize: 14 },
   botaoText: { color: '#fff', fontWeight: 'bold', fontSize: 14 },
@@ -442,4 +551,17 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   modalBotoes: { flexDirection: 'row', gap: 10, marginTop: 16 },
+  embalagemFotoRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginVertical: 10 },
+  embalagemFotoTaken: { backgroundColor: 'rgba(34,197,94,0.12)', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8 },
+  embalagemFotoTakenText: { color: colors.success, fontWeight: 'bold', fontSize: 12 },
+  botaoCamera: {
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    borderStyle: 'dashed',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  botaoCameraText: { color: colors.primary, fontSize: 12, fontWeight: '600' },
 });
