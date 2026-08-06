@@ -119,12 +119,12 @@
 
 | # | Tarefa | Descrição | Status |
 |---|--------|-----------|--------|
-| F20 | **Fila de Lavagem** | Tela com lista de tapetes aguardando lavagem (etapa 3 concluída, etapa 4 pendente). Botão "Iniciar Lavagem" | 🔴 |
-| F21 | **Lavando Agora** | Lista de tapetes em lavagem (etapa 4 em_andamento). Botão "Concluir Lavagem" que avança para etapa 5 | 🔴 |
-| F22 | **Fila de Secagem** | Lista de tapetes aguardando secagem (etapa 6 concluída, etapa 7 pendente). Botão "Iniciar Secagem" | 🔴 |
-| F23 | **Secando Agora** | Lista de tapetes em secagem (etapa 7 em_andamento). Botão "Concluir Secagem" que avança para etapa 8, depois 9 | 🔴 |
-| F24 | **Observações por Etapa** | Campo opcional de observações ao concluir/avançar cada etapa. Ex: "Tapete com mancha persistente", "Franja desfiada" | 🔴 |
-| F25 | **Fotos de Produção** | Câmera opcional ao concluir etapas de produção. Ex: foto do tapete lavado, foto do tapete seco | 🔴 |
+| F20 | **Fila de Lavagem** | Tela com lista de tapetes aguardando lavagem (etapa 3 concluída, etapa 4 pendente). Botão "Iniciar Lavagem" | 🔵 |
+| F21 | **Lavando Agora** | Lista de tapetes em lavagem (etapa 4 em_andamento). Botão "Concluir Lavagem" que avança para etapa 5 | 🔵 |
+| F22 | **Fila de Secagem** | Lista de tapetes aguardando secagem (etapa 6 concluída, etapa 7 pendente). Botão "Iniciar Secagem" | 🔵 |
+| F23 | **Secando Agora** | Lista de tapetes em secagem (etapa 7 em_andamento). Botão "Concluir Secagem" que avança para etapa 8, depois 9 | 🔵 |
+| F24 | **Observações por Etapa** | Campo opcional de observações ao concluir/avançar cada etapa. Ex: "Tapete com mancha persistente", "Franja desfiada" | 🔵 |
+| F25 | **Fotos de Produção** | Câmera opcional ao concluir etapas de produção. Ex: foto do tapete lavado, foto do tapete seco | 🔵 |
 
 ---
 

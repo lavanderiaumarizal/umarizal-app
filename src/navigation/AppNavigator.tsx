@@ -15,6 +15,7 @@ import DashboardScreen from '../screens/Dashboard';
 import KanbanProducaoScreen from '../screens/KanbanProducao';
 import DetalhesOrcamentoScreen from '../screens/DetalhesOrcamento';
 import RotaDoDiaScreen from '../screens/RotaDoDia';
+import ProducaoScreen from '../screens/Producao';
 import type { Perfil } from '../types';
 
 export type RootStackParamList = {
@@ -23,6 +24,7 @@ export type RootStackParamList = {
   Kanban: { perfil: Perfil };
   Detalhes: { orcamentoId: string };
   RotaDoDia: undefined;
+  Producao: { perfil: Perfil };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -74,6 +76,11 @@ export default function AppNavigator() {
               name="RotaDoDia"
               component={RotaDoDiaScreen}
               options={{ title: 'Rota do Dia', headerShown: true }}
+            />
+            <Stack.Screen
+              name="Producao"
+              component={ProducaoScreen}
+              options={{ title: 'Produção', headerShown: true }}
             />
           </>
         ) : (

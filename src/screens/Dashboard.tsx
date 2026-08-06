@@ -53,6 +53,7 @@ function cardsDoPerfil(
   perfil: Perfil,
   dados: { coletas: number | null; entregas: number | null },
   onAbrirRota?: () => void,
+  onAbrirProducao?: () => void,
 ): CardDef[] {
   switch (perfil) {
     case 'motorista':
@@ -89,14 +90,14 @@ function cardsDoPerfil(
       ];
     case 'lavagem':
       return [
-        { icon: '🧼', title: 'Na Fila de Lavagem', value: null, subtitle: 'Aguardando kanban (B18)', accent: colors.primary },
-        { icon: '🫧', title: 'Lavando Agora', value: null, subtitle: 'Aguardando kanban (B18)', accent: colors.info },
+        { icon: '🧼', title: 'Na Fila de Lavagem', value: null, subtitle: 'Tocar para abrir', accent: colors.primary, onPress: onAbrirProducao },
+        { icon: '🫧', title: 'Lavando Agora', value: null, subtitle: 'Tocar para abrir', accent: colors.info, onPress: onAbrirProducao },
         { icon: '✅', title: 'Finalizados Hoje', value: null, subtitle: 'Aguardando kanban (B18)', accent: colors.success },
       ];
     case 'secagem':
       return [
-        { icon: '☀️', title: 'Na Fila de Secagem', value: null, subtitle: 'Aguardando kanban (B18)', accent: colors.primary },
-        { icon: '🌬️', title: 'Secando Agora', value: null, subtitle: 'Aguardando kanban (B18)', accent: colors.brandGold },
+        { icon: '☀️', title: 'Na Fila de Secagem', value: null, subtitle: 'Tocar para abrir', accent: colors.primary, onPress: onAbrirProducao },
+        { icon: '🌬️', title: 'Secando Agora', value: null, subtitle: 'Tocar para abrir', accent: colors.brandGold, onPress: onAbrirProducao },
         { icon: '✅', title: 'Finalizados Hoje', value: null, subtitle: 'Aguardando kanban (B18)', accent: colors.success },
       ];
     case 'expedicao':
@@ -158,7 +159,12 @@ export default function DashboardScreen() {
     setRefreshing(false);
   }, [carregarDados]);
 
-  const cards = cardsDoPerfil(perfil, dados, () => navigation.navigate('RotaDoDia'));
+  const cards = cardsDoPerfil(
+    perfil,
+    dados,
+    () => navigation.navigate('RotaDoDia'),
+    () => navigation.navigate('Producao', { perfil }),
+  );
 
   return (
     <ScrollView
