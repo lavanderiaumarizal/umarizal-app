@@ -35,7 +35,7 @@
 | B11 | **Criar endpoint `POST /api/orcamentos/:id/carregar`** | Marca tapete como carregado no veículo. Body: { veiculo? }. Cria registro em carregamento_veiculo | 🔵 |
 | B12 | **Criar endpoint `DELETE /api/orcamentos/:id/carregar`** | Remove flag de carregado no veículo | 🔵 |
 | B13 | **Criar endpoint `GET /api/orcamentos/minhas-coletas`** | Retorna coletas atribuídas ao transportador do motorista logado | 🔵 |
-| B14 | **Criar endpoint `GET /api/orcamentos/minhas-entregas`** | Retorna entregas atribuídas ao transportador do motorista logado | 🔴 |
+| B14 | **Criar endpoint `GET /api/orcamentos/minhas-entregas`** | Retorna entregas atribuídas ao transportador do motorista logado | 🔵 |
 | B15 | **Criar middleware de perfil (multi-perfil)** | Middleware `requirePerfil(...perfis)` que aceita array de perfis. Admin sempre passa. Usuário precisa ter PELO MENOS UM dos perfis exigidos. Se `req.user.perfis` incluir 'admin', libera tudo | 🔴 |
 | B16 | **Seed de dados** | Criar script que inicializa as 12 etapas para orçamentos existentes com status adequado baseado no faseAtual | 🔴 |
 | B17 | **Ajustar rate limiter** | Garantir que o rate limiter permita 60 req/min para o app e 10 req/min para login | 🔴 |
