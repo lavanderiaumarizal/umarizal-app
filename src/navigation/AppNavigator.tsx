@@ -12,10 +12,13 @@ import { colors } from '../theme';
 import { useAuthStore } from '../store/authStore';
 import LoginScreen from '../screens/Login';
 import DashboardScreen from '../screens/Dashboard';
+import KanbanProducaoScreen from '../screens/KanbanProducao';
+import type { Perfil } from '../types';
 
 export type RootStackParamList = {
   Login: undefined;
   Dashboard: undefined;
+  Kanban: { perfil: Perfil };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -47,11 +50,18 @@ export default function AppNavigator() {
         }}
       >
         {token ? (
-          <Stack.Screen
-            name="Dashboard"
-            component={DashboardScreen}
-            options={{ headerShown: false, title: 'Início' }}
-          />
+          <>
+            <Stack.Screen
+              name="Dashboard"
+              component={DashboardScreen}
+              options={{ headerShown: false, title: 'Início' }}
+            />
+            <Stack.Screen
+              name="Kanban"
+              component={KanbanProducaoScreen}
+              options={{ title: 'Kanban de Produção', headerShown: true }}
+            />
+          </>
         ) : (
           <Stack.Screen
             name="Login"

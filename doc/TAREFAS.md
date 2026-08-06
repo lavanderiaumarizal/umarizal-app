@@ -64,7 +64,7 @@
 
 | # | Tarefa | Descrição | Status |
 |---|--------|-----------|--------|
-| B18 | **Criar endpoint `GET /api/kanban/:perfil`** | Retorna orçamentos agrupados por status/fase conforme o perfil (motorista vê coletas/entregas, lavagem vê F2, etc). **Sem valores financeiros para perfis não-admin** | 🔴 |
+| B18 | **Criar endpoint `GET /api/kanban/:perfil`** | Retorna orçamentos agrupados por status/fase conforme o perfil (motorista vê coletas/entregas, lavagem vê F2, etc). **Sem valores financeiros para perfis não-admin** | 🔵 |
 | B19 | **Criar endpoint `PUT /api/orcamentos/:id/etapa`** | Atualiza etapa específica com status e responsavel. Alternativa mais simples aos endpoints individuais | 🔴 |
 | B20 | **Criar filtro de dados por perfil** | Implementar função `filtrarDadosPorPerfil(orcamento, perfis)` que remove campos financeiros (valorTotal, pix, parcelas, etc.) e dados sensíveis (CPF, e-mail) para perfis não-admin. Aplicar em todos os endpoints de listagem/detalhes | 🔴 |
 | B21 | **Criar endpoint `GET /api/orcamentos/documentacao-pendente`** | Retorna orçamentos em F1_COLETADO aguardando documentação (etapa 2). Inclui itens com medidas para vincular fotos. **Sem valores financeiros** | 🔴 |
@@ -74,11 +74,11 @@
 | # | Tarefa | Descrição | Status |
 |---|--------|-----------|--------|
 | F8 | **Tela Dashboard** | Cards por perfil conforme documento 3_TELAS.md. Motorista: rota+coletas+entregas. Lavagem: fila lavagem. Secagem: fila secagem. Expedição: inspeção+embalagem | 🔵 |
-| F9 | **Tela Kanban por Fase** | 3 colunas (Pendente | Em Andamento | Concluído). Cards com código, cliente, serviço, medidas, status, tempo. Scroll horizontal | 🔴 |
+| F9 | **Tela Kanban por Fase** | 3 colunas (Pendente | Em Andamento | Concluído). Cards com código, cliente, serviço, medidas, status, tempo. Scroll horizontal | 🔵 |
 | F10 | **Tela Detalhes do Tapete** | Fotos do estado inicial, dados do cliente, itens/medidas, timeline das 12 etapas, status atual, botão Avançar/Retornar | 🔴 |
 | F11 | **Componente Timeline de Etapas** | Visualização vertical das 12 etapas com ícones, check verde para concluída, azul para atual, cinza para pendente | 🔴 |
-| F12 | **Componente KanbanCard** | Card reutilizável com código, nome, serviço, medidas, badge de status, tempo decorrido | 🔴 |
-| F13 | **Componente StatusBadge** | Badge de cor para cada status (pendente=cinza, andamento=azul, concluido=verde) | 🔴 |
+| F12 | **Componente KanbanCard** | Card reutilizável com código, nome, serviço, medidas, badge de status, tempo decorrido | 🔵 |
+| F13 | **Componente StatusBadge** | Badge de cor para cada status (pendente=cinza, andamento=azul, concluido=verde) | 🔵 |
 
 ---
 

@@ -21,12 +21,15 @@ import {
   ScrollView,
   RefreshControl,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { colors, primaryGradient } from '../theme';
 import { useAuthStore } from '../store/authStore';
 import { useAppStore } from '../store/appStore';
 import { minhasColetas, minhasEntregas } from '../api/orcamentos';
 import DashboardCard from '../components/DashboardCard';
 import type { Perfil } from '../types';
+import type { RootStackParamList } from '../navigation/AppNavigator';
 
 const PERFIL_LABEL: Record<Perfil, string> = {
   admin: 'Administrador',
@@ -111,6 +114,7 @@ export default function DashboardScreen() {
   const logout = useAuthStore((s) => s.logout);
   const perfilAtivo = useAppStore((s) => s.perfilAtivo);
   const setPerfilAtivo = useAppStore((s) => s.setPerfilAtivo);
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const perfis = user?.perfis ?? [];
   const perfil = perfilAtivo ?? perfis[0] ?? 'admin';
@@ -197,6 +201,14 @@ export default function DashboardScreen() {
       {dados.coletas === null && perfis.includes('motorista') && (
         <Text style={styles.nota}>ℹ️ Não foi possível carregar as pendências. Verifique sua conexão.</Text>
       )}
+
+      {/* Acesso ao kanban */}
+      <TouchableOpacity
+        style={styles.kanbanButton}
+        onPress={() => navigation.navigate('Kanban', { perfil })}
+      >
+        <Text style={styles.kanbanButtonText}>🎯 Abrir Kanban de Produção</Text>
+      </TouchableOpacity>
 
       <TouchableOpacity style={styles.logout} onPress={() => void logout()}>
         <Text style={styles.logoutText}>Sair</Text>
@@ -294,6 +306,20 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     fontSize: 12,
     marginTop: 12,
+  },
+  kanbanButton: {
+    backgroundColor: colors.activeBg,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  kanbanButtonText: {
+    color: colors.active,
+    fontWeight: 'bold',
+    fontSize: 14,
   },
   logout: {
     backgroundColor: 'rgba(239, 68, 68, 0.1)',
