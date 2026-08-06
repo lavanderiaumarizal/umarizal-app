@@ -13,12 +13,14 @@ import { useAuthStore } from '../store/authStore';
 import LoginScreen from '../screens/Login';
 import DashboardScreen from '../screens/Dashboard';
 import KanbanProducaoScreen from '../screens/KanbanProducao';
+import DetalhesOrcamentoScreen from '../screens/DetalhesOrcamento';
 import type { Perfil } from '../types';
 
 export type RootStackParamList = {
   Login: undefined;
   Dashboard: undefined;
   Kanban: { perfil: Perfil };
+  Detalhes: { orcamentoId: string };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -60,6 +62,11 @@ export default function AppNavigator() {
               name="Kanban"
               component={KanbanProducaoScreen}
               options={{ title: 'Kanban de Produção', headerShown: true }}
+            />
+            <Stack.Screen
+              name="Detalhes"
+              component={DetalhesOrcamentoScreen}
+              options={{ title: 'Detalhes do Tapete', headerShown: true }}
             />
           </>
         ) : (

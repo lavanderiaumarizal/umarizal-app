@@ -17,6 +17,8 @@ import {
   RefreshControl,
 } from 'react-native';
 import type { RouteProp } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { colors } from '../theme';
 import { kanbanPorPerfil, ETAPA_NOME } from '../api/kanban';
 import KanbanCard from '../components/KanbanCard';
@@ -49,6 +51,7 @@ export default function KanbanProducaoScreen({
   route: RouteProp<RootStackParamList, 'Kanban'>;
 }) {
   const { perfil } = route.params;
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [dados, setDados] = useState<Record<string, any[]>>({
     pendente: [],
     em_andamento: [],
@@ -126,6 +129,7 @@ export default function KanbanProducaoScreen({
                       <KanbanCard
                         key={`${item.orcamento.id}-${i}`}
                         item={item}
+                        onPress={() => navigation.navigate('Detalhes', { orcamentoId: item.orcamento.id })}
                       />
                     ))
                   )}

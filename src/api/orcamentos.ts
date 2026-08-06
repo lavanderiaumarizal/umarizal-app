@@ -62,3 +62,30 @@ export async function minhasEntregas(): Promise<
   const { data } = await api.get('/orcamentos/minhas-entregas');
   return data;
 }
+
+/** Foto do estado inicial (formato do backend — fotos.controller) */
+export interface Foto {
+  id: number;
+  itemId: string | null;
+  original: string;
+  thumb: string;
+  formato: 'novo' | 'antigo';
+}
+
+/** GET /api/orcamentos/:id — detalhes do orçamento (F10) */
+export async function getOrcamento(id: string): Promise<OrcamentoDetalhe> {
+  const { data } = await api.get<ApiSuccessResponse<OrcamentoDetalhe>>(`/orcamentos/${id}`);
+  return data.data;
+}
+
+/** GET /api/orcamentos/:id/fotos — fotos do estado inicial (F10) */
+export async function getFotos(id: string): Promise<Foto[]> {
+  const { data } = await api.get<ApiSuccessResponse<Foto[]>>(`/orcamentos/${id}/fotos`);
+  return data.data;
+}
+
+/** Detalhe do orçamento (sem exibir valores financeiros — doc 6) */
+export interface OrcamentoDetalhe extends OrcamentoResumo {
+  cliente: OrcamentoResumo['cliente'] & { email?: string | null };
+  itens: ItemResumo[];
+}

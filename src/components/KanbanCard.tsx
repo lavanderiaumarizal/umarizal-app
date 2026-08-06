@@ -5,13 +5,13 @@
  * SEM valores financeiros (o backend já filtra para não-admin).
  */
 
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { colors } from '../theme';
 import StatusBadge from './StatusBadge';
 import { ETAPA_NOME } from '../api/kanban';
 import type { KanbanItem } from '../api/kanban';
 
-export default function KanbanCard({ item }: { item: KanbanItem }) {
+export default function KanbanCard({ item, onPress }: { item: KanbanItem; onPress?: () => void }) {
   const { orcamento, etapaAtual, etapaStatus } = item;
 
   const servicos = orcamento.itens
@@ -27,7 +27,7 @@ export default function KanbanCard({ item }: { item: KanbanItem }) {
     .join(' · ');
 
   return (
-    <View style={styles.card}>
+    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7} disabled={!onPress}>
       <View style={styles.header}>
         <Text style={styles.codigo}>{orcamento.codigo}</Text>
         <StatusBadge status={etapaStatus} />
@@ -46,7 +46,7 @@ export default function KanbanCard({ item }: { item: KanbanItem }) {
           Etapa atual: {ETAPA_NOME[etapaAtual] ?? etapaAtual}
         </Text>
       )}
-    </View>
+    </TouchableOpacity>
   );
 }
 

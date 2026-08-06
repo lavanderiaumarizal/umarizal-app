@@ -75,8 +75,8 @@
 |---|--------|-----------|--------|
 | F8 | **Tela Dashboard** | Cards por perfil conforme documento 3_TELAS.md. Motorista: rota+coletas+entregas. Lavagem: fila lavagem. Secagem: fila secagem. Expedição: inspeção+embalagem | 🔵 |
 | F9 | **Tela Kanban por Fase** | 3 colunas (Pendente | Em Andamento | Concluído). Cards com código, cliente, serviço, medidas, status, tempo. Scroll horizontal | 🔵 |
-| F10 | **Tela Detalhes do Tapete** | Fotos do estado inicial, dados do cliente, itens/medidas, timeline das 12 etapas, status atual, botão Avançar/Retornar | 🔴 |
-| F11 | **Componente Timeline de Etapas** | Visualização vertical das 12 etapas com ícones, check verde para concluída, azul para atual, cinza para pendente | 🔴 |
+| F10 | **Tela Detalhes do Tapete** | Fotos do estado inicial, dados do cliente, itens/medidas, timeline das 12 etapas, status atual, botão Avançar/Retornar | 🔵 |
+| F11 | **Componente Timeline de Etapas** | Visualização vertical das 12 etapas com ícones, check verde para concluída, azul para atual, cinza para pendente | 🔵 |
 | F12 | **Componente KanbanCard** | Card reutilizável com código, nome, serviço, medidas, badge de status, tempo decorrido | 🔵 |
 | F13 | **Componente StatusBadge** | Badge de cor para cada status (pendente=cinza, andamento=azul, concluido=verde) | 🔵 |
 
