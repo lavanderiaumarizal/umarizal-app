@@ -232,6 +232,14 @@ export default function DashboardScreen() {
         </TouchableOpacity>
       )}
 
+      {/* Acesso ao relatório do dia (todos os perfis — valores só admin) */}
+      <TouchableOpacity
+        style={styles.relatorioButton}
+        onPress={() => navigation.navigate('Relatorio')}
+      >
+        <Text style={styles.relatorioButtonText}>📊 Relatório do Dia</Text>
+      </TouchableOpacity>
+
       <TouchableOpacity style={styles.logout} onPress={() => void logout()}>
         <Text style={styles.logoutText}>Sair</Text>
       </TouchableOpacity>
@@ -354,6 +362,20 @@ const styles = StyleSheet.create({
   },
   almoxarifadoButtonText: {
     color: colors.warning,
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+  relatorioButton: {
+    backgroundColor: 'rgba(34, 197, 94, 0.1)',
+    borderWidth: 1,
+    borderColor: colors.success,
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  relatorioButtonText: {
+    color: colors.success,
     fontWeight: 'bold',
     fontSize: 14,
   },

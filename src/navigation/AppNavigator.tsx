@@ -17,6 +17,7 @@ import DetalhesOrcamentoScreen from '../screens/DetalhesOrcamento';
 import RotaDoDiaScreen from '../screens/RotaDoDia';
 import ProducaoScreen from '../screens/Producao';
 import AlmoxarifadoScreen from '../screens/Almoxarifado';
+import RelatorioDiaScreen from '../screens/RelatorioDia';
 import type { Perfil } from '../types';
 
 export type RootStackParamList = {
@@ -27,6 +28,7 @@ export type RootStackParamList = {
   RotaDoDia: undefined;
   Producao: { perfil: Perfil };
   Almoxarifado: undefined;
+  Relatorio: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -88,6 +90,11 @@ export default function AppNavigator() {
               name="Almoxarifado"
               component={AlmoxarifadoScreen}
               options={{ title: 'Almoxarifado', headerShown: true }}
+            />
+            <Stack.Screen
+              name="Relatorio"
+              component={RelatorioDiaScreen}
+              options={{ title: 'Relatório do Dia', headerShown: true }}
             />
           </>
         ) : (
