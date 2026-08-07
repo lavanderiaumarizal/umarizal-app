@@ -11,6 +11,7 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.umarizal.app",
       "adaptiveIcon": {
         "backgroundColor": "#111827",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -25,6 +26,12 @@
     "plugins": [
       "expo-secure-store",
       "@maplibre/maplibre-react-native"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "f635674a-9bbe-47f5-bf93-975664e953ab"
+      }
+    },
+    "owner": "lavanderiaumarizal"
   }
 }
