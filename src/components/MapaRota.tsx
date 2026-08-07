@@ -1,45 +1,46 @@
 /**
  * components/MapaRota.tsx — Mapa da rota do dia (F14.1)
  *
- * - Pins: COLETA 🟢 (verde) · ENTREGA 🔵 (azul)
- * - Linha conectando as paradas na ordem da rota
- * - Callout com tipo/horário + endereço + botão "Navegar"
+ * MapLibre GL + OpenFreeMap (tiles OpenStreetMap) — 100% gratuito, SEM chave
+ * e SEM conta Google. (Opção B — escolhida por não exigir configuração.)
+ *
+ * - Markers custom: COLETA 🟢 · ENTREGA 🔵 (com número da ordem)
+ * - Linha conectando as paradas na ordem da rota (GeoJSON LineString)
+ * - Callout em overlay ao tocar num marker + botão "Navegar"
  */
 
-import MapView, { Marker, Polyline, Callout, type Region } from 'react-native-maps';
+import { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Linking } from 'react-native';
+import * as MapLibreGL from '@maplibre/maplibre-react-native';
 import { colors } from '../theme';
 import type { Waypoint } from '../api/routexl';
+
+/** Style gratuito do OpenFreeMap (tiles OpenStreetMap, sem chave) */
+const STYLE_URL = 'https://tiles.openfreemap.org/styles/liberty';
+
+const COR_COLETA = '#22c55e'; // verde
+const COR_ENTREGA = '#3b82f6'; // azul
 
 interface Props {
   waypoints: Waypoint[];
 }
 
-const COR_COLETA = '#22c55e'; // verde
-const COR_ENTREGA = '#3b82f6'; // azul
-
 export default function MapaRota({ waypoints }: Props) {
+  const [selecionado, setSelecionado] = useState<Waypoint | null>(null);
+
   const paradas = waypoints.filter(
     (w): w is Waypoint & { latitude: number; longitude: number } =>
       w.tipo !== 'DEPOT' && w.latitude != null && w.longitude != null,
   );
 
-  // Região inicial: centro das paradas (fallback: São Paulo)
-  const region: Region = paradas.length
-    ? {
-        latitude: paradas.reduce((s, p) => s + p.latitude, 0) / paradas.length,
-        longitude: paradas.reduce((s, p) => s + p.longitude, 0) / paradas.length,
-        latitudeDelta: 0.12,
-        longitudeDelta: 0.12,
-      }
-    : {
-        latitude: -23.5505,
-        longitude: -46.6333,
-        latitudeDelta: 0.15,
-        longitudeDelta: 0.15,
-      };
+  const rotaCoords = paradas.map((p) => [p.longitude, p.latitude] as [number, number]);
 
-  const rotaCoords = paradas.map((p) => ({ latitude: p.latitude, longitude: p.longitude }));
+  const center = paradas.length
+    ? {
+        longitude: paradas.reduce((s, p) => s + p.longitude, 0) / paradas.length,
+        latitude: paradas.reduce((s, p) => s + p.latitude, 0) / paradas.length,
+      }
+    : { longitude: -46.6333, latitude: -23.5505 };
 
   function navegar(wp: Waypoint) {
     const url = `https://maps.google.com/?daddr=${wp.latitude},${wp.longitude}`;
@@ -47,66 +48,120 @@ export default function MapaRota({ waypoints }: Props) {
   }
 
   return (
-    <MapView style={styles.mapa} initialRegion={region}>
-      {/* Linha da rota */}
-      {rotaCoords.length > 1 && (
-        <Polyline
-          coordinates={rotaCoords}
-          strokeColor={colors.primary}
-          strokeWidth={3}
-          lineDashPattern={[1, 0]}
+    <View style={styles.wrap}>
+      <MapLibreGL.Map
+        style={styles.mapa}
+        mapStyle={STYLE_URL}
+        onPress={() => setSelecionado(null)}
+      >
+        <MapLibreGL.Camera
+          center={[center.longitude, center.latitude]}
+          zoom={11}
         />
-      )}
 
-      {/* Pins das paradas */}
-      {paradas.map((wp) => (
-        <Marker
-          key={wp.ordem}
-          coordinate={{ latitude: wp.latitude, longitude: wp.longitude }}
-          pinColor={wp.tipo === 'COLETA' ? COR_COLETA : COR_ENTREGA}
-          title={`${wp.ordem}. ${wp.tipo === 'COLETA' ? 'Coleta' : 'Entrega'}${wp.horarioChegada ? ` · ${wp.horarioChegada}` : ''}`}
-          description={wp.enderecoCompleto ?? ''}
-        >
-          <Callout tooltip={false} onPress={() => navegar(wp)}>
-            <View style={styles.callout}>
-              <Text style={styles.calloutTitulo}>
-                {wp.ordem}. {wp.tipo === 'COLETA' ? '🟢 Coleta' : '🔵 Entrega'}
-                {wp.concluido ? ' ✅' : ''}
-              </Text>
-              <Text style={styles.calloutEndereco} numberOfLines={2}>
-                {wp.enderecoCompleto ?? 'Endereço não informado'}
-              </Text>
-              <Text style={styles.calloutHorario}>
-                {wp.horarioChegada ? `Chegada prevista: ${wp.horarioChegada}` : ''}
-              </Text>
-              <TouchableOpacity style={styles.calloutBotao} onPress={() => navegar(wp)}>
-                <Text style={styles.calloutBotaoText}>📍 Navegar</Text>
-              </TouchableOpacity>
+        {/* Linha da rota */}
+        {rotaCoords.length > 1 && (
+          <MapLibreGL.GeoJSONSource
+            id="rota-linha"
+            data={{ type: 'LineString', coordinates: rotaCoords }}
+          >
+            <MapLibreGL.Layer
+              id="rota-linha-camada"
+              type="line"
+              style={{ lineColor: colors.primary, lineWidth: 3, lineOpacity: 0.9 }}
+            />
+          </MapLibreGL.GeoJSONSource>
+        )}
+
+        {/* Markers das paradas */}
+        {paradas.map((wp) => (
+          <MapLibreGL.Marker
+            key={wp.ordem}
+            id={`pin-${wp.ordem}`}
+            lngLat={[wp.longitude, wp.latitude]}
+            onPress={() => setSelecionado(wp)}
+          >
+            <View
+              style={[
+                styles.pin,
+                {
+                  backgroundColor: wp.tipo === 'COLETA' ? COR_COLETA : COR_ENTREGA,
+                  borderColor: selecionado?.ordem === wp.ordem ? '#fff' : 'transparent',
+                },
+              ]}
+            >
+              <Text style={styles.pinNumero}>{wp.ordem}</Text>
             </View>
-          </Callout>
-        </Marker>
-      ))}
-    </MapView>
+          </MapLibreGL.Marker>
+        ))}
+      </MapLibreGL.Map>
+
+      {/* Callout em overlay (mais estável que o Callout nativo) */}
+      {selecionado && (
+        <View style={styles.calloutOverlay}>
+          <View style={styles.callout}>
+            <Text style={styles.calloutTitulo}>
+              {selecionado.ordem}. {selecionado.tipo === 'COLETA' ? '🟢 Coleta' : '🔵 Entrega'}
+              {selecionado.concluido ? ' ✅' : ''}
+            </Text>
+            <Text style={styles.calloutEndereco} numberOfLines={2}>
+              {selecionado.enderecoCompleto ?? 'Endereço não informado'}
+            </Text>
+            <Text style={styles.calloutHorario}>
+              {selecionado.horarioChegada ? `Chegada prevista: ${selecionado.horarioChegada}` : ''}
+            </Text>
+            <TouchableOpacity style={styles.calloutBotao} onPress={() => navegar(selecionado)}>
+              <Text style={styles.calloutBotaoText}>📍 Navegar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  wrap: { flex: 1 },
   mapa: { flex: 1 },
+  pin: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pinNumero: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  calloutOverlay: {
+    position: 'absolute',
+    bottom: 16,
+    left: 16,
+    right: 16,
+    zIndex: 10,
+  },
   callout: {
     backgroundColor: colors.surface,
-    borderRadius: 10,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: colors.border,
-    padding: 10,
-    width: 200,
+    padding: 12,
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 8,
   },
-  calloutTitulo: { color: colors.text, fontSize: 13, fontWeight: 'bold' },
+  calloutTitulo: { color: colors.text, fontSize: 14, fontWeight: 'bold' },
   calloutEndereco: { color: colors.textSecondary, fontSize: 12, marginTop: 4 },
   calloutHorario: { color: colors.textMuted, fontSize: 11, marginTop: 2 },
   calloutBotao: {
     backgroundColor: colors.primary,
     borderRadius: 8,
-    paddingVertical: 8,
+    paddingVertical: 9,
     alignItems: 'center',
     marginTop: 8,
   },
