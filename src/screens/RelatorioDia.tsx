@@ -20,12 +20,14 @@ import {
 import { colors, primaryGradient } from '../theme';
 import { getRelatorioDia, type RelatorioDia } from '../api/relatorio';
 import { useAuthStore } from '../store/authStore';
+import Preco from '../components/Preco';
 
 function fmtDataBR(iso: string): string {
   const [y, m, d] = iso.split('-');
   return `${d}/${m}/${y}`;
 }
 
+/** Formata moeda para o texto de compartilhamento (só admin usa) */
 function fmtMoeda(v?: number): string {
   if (v === undefined) return '';
   return `R$ ${v.toFixed(2).replace('.', ',')}`;
@@ -126,16 +128,12 @@ export default function RelatorioDiaScreen() {
         <View style={[styles.card, { borderLeftColor: colors.brandLime }]}>
           <Text style={styles.cardValue}>{relatorio.totalColetas}</Text>
           <Text style={styles.cardLabel}>📦 Coletas</Text>
-          {ehAdmin && relatorio.valorColetas !== undefined && (
-            <Text style={styles.cardValor}>{fmtMoeda(relatorio.valorColetas)}</Text>
-          )}
+          <Preco value={relatorio.valorColetas} style={styles.cardValor} />
         </View>
         <View style={[styles.card, { borderLeftColor: colors.brandGold }]}>
           <Text style={styles.cardValue}>{relatorio.totalEntregas}</Text>
           <Text style={styles.cardLabel}>🚚 Entregas</Text>
-          {ehAdmin && relatorio.valorEntregas !== undefined && (
-            <Text style={styles.cardValor}>{fmtMoeda(relatorio.valorEntregas)}</Text>
-          )}
+          <Preco value={relatorio.valorEntregas} style={styles.cardValor} />
         </View>
       </View>
 
@@ -150,9 +148,7 @@ export default function RelatorioDiaScreen() {
               <Text style={styles.linhaLabel}>{t.categoria}</Text>
               <View style={styles.linhaRight}>
                 <Text style={styles.linhaQtd}>{t.quantidade}</Text>
-                {ehAdmin && t.valor !== undefined && (
-                  <Text style={styles.linhaValor}>{fmtMoeda(t.valor)}</Text>
-                )}
+                <Preco value={t.valor} style={styles.linhaValor} />
               </View>
             </View>
           ))

@@ -147,7 +147,7 @@
 | **F33** | **Vínculo Foto-Item** | Ao tirar foto via expo-camera, vincula ao `itemId` do OrcamentoItem. Envia para `POST /api/orcamentos/:id/fotos` com `{ fotos: [...], itemId }`. Preview das fotos enviadas | 🔵 |
 | **F34** | **Remoção de Foto** | Deslizar ou botão X na miniatura para remover foto. Consome `DELETE /api/orcamentos/:id/fotos/:indice` | 🔵 |
 | **F35** | **Confirmar Documentação** | Botão "Documentação Concluída" que avança etapa 2. Consome endpoint de conclusão de etapa. Notifica backend para atualizar status | 🔵 |
-| **F36** | **Filtro de preços por perfil** | Implementar lógica de ocultação de valores em TODAS as telas do app. O Zustand store contém `perfis: string[]`. Componentes de valor só renderizam se `perfis.includes('admin')`. Criar componente `<Preco value={x} />` que só exibe se admin | 🔴 |
+| **F36** | **Filtro de preços por perfil** | Implementar lógica de ocultação de valores em TODAS as telas do app. O Zustand store contém `perfis: string[]`. Componentes de valor só renderizam se `perfis.includes('admin')`. Criar componente `<Preco value={x} />` que só exibe se admin | 🔵 |
 
 ---
 
