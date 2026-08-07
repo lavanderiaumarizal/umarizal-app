@@ -171,3 +171,56 @@ export async function descarregarOrcamento(id: string): Promise<any> {
   const { data } = await api.delete(`/orcamentos/${id}/carregar`);
   return data;
 }
+
+/** Orçamento aguardando documentação (B21) */
+export interface OrcamentoDocumentacao {
+  id: string;
+  codigo: string;
+  status: string;
+  faseAtual: string;
+  dataColetaAgendada: string | null;
+  dataColetaRealizada: string | null;
+  cliente: {
+    id: string;
+    nome: string;
+    telefone: string | null;
+    endereco: string | null;
+    numero: string | null;
+    complemento: string | null;
+    bairro: string | null;
+    cidade: string | null;
+    uf: string | null;
+  };
+  itens: Array<{
+    id: string;
+    servicoNome: string | null;
+    categoriaNome: string | null;
+    largura: number | null;
+    comprimento: number | null;
+    quantidade: number;
+    opcaoNome: string | null;
+    escalaNome: string | null;
+  }>;
+}
+
+/** GET /api/orcamentos/documentacao-pendente (B21) */
+export async function documentacaoPendente(): Promise<OrcamentoDocumentacao[]> {
+  const { data } = await api.get<ApiSuccessResponse<OrcamentoDocumentacao[]>>('/orcamentos/documentacao-pendente');
+  return data.data;
+}
+
+/** POST /api/orcamentos/:id/fotos — upload com vínculo por item (F33) */
+export async function uploadFotos(
+  id: string,
+  fotos: string[],
+  itemId?: string,
+): Promise<any> {
+  const { data } = await api.post(`/orcamentos/${id}/fotos`, { fotos, itemId });
+  return data;
+}
+
+/** DELETE /api/orcamentos/:id/fotos/:indice (F34) */
+export async function deleteFoto(id: string, indice: number): Promise<any> {
+  const { data } = await api.delete(`/orcamentos/${id}/fotos/${indice}`);
+  return data;
+}

@@ -67,7 +67,7 @@
 | B18 | **Criar endpoint `GET /api/kanban/:perfil`** | Retorna orçamentos agrupados por status/fase conforme o perfil (motorista vê coletas/entregas, lavagem vê F2, etc). **Sem valores financeiros para perfis não-admin** | 🔵 |
 | B19 | **Criar endpoint `PUT /api/orcamentos/:id/etapa`** | Atualiza etapa específica com status e responsavel. Alternativa mais simples aos endpoints individuais | 🔴 |
 | B20 | **Criar filtro de dados por perfil** | Implementar função `filtrarDadosPorPerfil(orcamento, perfis)` que remove campos financeiros (valorTotal, pix, parcelas, etc.) e dados sensíveis (CPF, e-mail) para perfis não-admin. Aplicar em todos os endpoints de listagem/detalhes | 🔴 |
-| B21 | **Criar endpoint `GET /api/orcamentos/documentacao-pendente`** | Retorna orçamentos em F1_COLETADO aguardando documentação (etapa 2). Inclui itens com medidas para vincular fotos. **Sem valores financeiros** | 🔴 |
+| B21 | **Criar endpoint `GET /api/orcamentos/documentacao-pendente`** | Retorna orçamentos em F1_COLETADO aguardando documentação (etapa 2). Inclui itens com medidas para vincular fotos. **Sem valores financeiros** | 🔵 |
 
 ### Tarefas de Frontend (App)
 
@@ -142,11 +142,11 @@
 | F29 | **Embalagem** | Botão "Embalar" que avança etapa 11. Opção de foto do tapete embalado | 🔵 |
 | F30 | **Tela Relatório do Dia** | Totais: coletas, entregas, por tipo de serviço, tempo médio por etapa. Botão Compartilhar resumo (texto ou PDF). **Admin vê valores; demais perfis veem apenas quantidades** | 🔵 |
 | F30.1 | **Notificações Push (opcional)** | Configurar `expo-notifications` para enviar notificações ao motorista quando uma nova rota for gerada, ou à equipe quando um tapete entrar na fila. Pode ser implementado em sprint futura | 🔴 |
-| **F31** | **Tela Documentação de Entrada** | Lista de orçamentos em F1_COLETADO aguardando documentação. Mostra código, cliente, data da coleta. Toque abre detalhes dos itens para fotografar | 🔴 |
-| **F32** | **Tela Captura por Item** | Ao selecionar um orçamento, mostra lista de itens (tapetes) com nome, medidas. Cada item tem botão [+] para abrir câmera. Miniaturas das fotos já tiradas por item | 🔴 |
-| **F33** | **Vínculo Foto-Item** | Ao tirar foto via expo-camera, vincula ao `itemId` do OrcamentoItem. Envia para `POST /api/orcamentos/:id/fotos` com `{ fotos: [...], itemId }`. Preview das fotos enviadas | 🔴 |
-| **F34** | **Remoção de Foto** | Deslizar ou botão X na miniatura para remover foto. Consome `DELETE /api/orcamentos/:id/fotos/:indice` | 🔴 |
-| **F35** | **Confirmar Documentação** | Botão "Documentação Concluída" que avança etapa 2. Consome endpoint de conclusão de etapa. Notifica backend para atualizar status | 🔴 |
+| **F31** | **Tela Documentação de Entrada** | Lista de orçamentos em F1_COLETADO aguardando documentação. Mostra código, cliente, data da coleta. Toque abre detalhes dos itens para fotografar | 🔵 |
+| **F32** | **Tela Captura por Item** | Ao selecionar um orçamento, mostra lista de itens (tapetes) com nome, medidas. Cada item tem botão [+] para abrir câmera. Miniaturas das fotos já tiradas por item | 🔵 |
+| **F33** | **Vínculo Foto-Item** | Ao tirar foto via expo-camera, vincula ao `itemId` do OrcamentoItem. Envia para `POST /api/orcamentos/:id/fotos` com `{ fotos: [...], itemId }`. Preview das fotos enviadas | 🔵 |
+| **F34** | **Remoção de Foto** | Deslizar ou botão X na miniatura para remover foto. Consome `DELETE /api/orcamentos/:id/fotos/:indice` | 🔵 |
+| **F35** | **Confirmar Documentação** | Botão "Documentação Concluída" que avança etapa 2. Consome endpoint de conclusão de etapa. Notifica backend para atualizar status | 🔵 |
 | **F36** | **Filtro de preços por perfil** | Implementar lógica de ocultação de valores em TODAS as telas do app. O Zustand store contém `perfis: string[]`. Componentes de valor só renderizam se `perfis.includes('admin')`. Criar componente `<Preco value={x} />` que só exibe se admin | 🔴 |
 
 ---

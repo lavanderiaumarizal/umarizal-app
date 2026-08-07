@@ -240,6 +240,16 @@ export default function DashboardScreen() {
         <Text style={styles.relatorioButtonText}>📊 Relatório do Dia</Text>
       </TouchableOpacity>
 
+      {/* Acesso à documentação de entrada (expedição) */}
+      {perfis.some((p) => ['admin', 'expedicao'].includes(p)) && (
+        <TouchableOpacity
+          style={styles.documentacaoButton}
+          onPress={() => navigation.navigate('Documentacao')}
+        >
+          <Text style={styles.documentacaoButtonText}>📋 Documentação de Entrada</Text>
+        </TouchableOpacity>
+      )}
+
       <TouchableOpacity style={styles.logout} onPress={() => void logout()}>
         <Text style={styles.logoutText}>Sair</Text>
       </TouchableOpacity>
@@ -376,6 +386,20 @@ const styles = StyleSheet.create({
   },
   relatorioButtonText: {
     color: colors.success,
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+  documentacaoButton: {
+    backgroundColor: 'rgba(56, 189, 248, 0.1)',
+    borderWidth: 1,
+    borderColor: colors.info,
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  documentacaoButtonText: {
+    color: colors.info,
     fontWeight: 'bold',
     fontSize: 14,
   },
