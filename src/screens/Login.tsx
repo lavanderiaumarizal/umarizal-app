@@ -96,6 +96,8 @@ export default function LoginScreen() {
           placeholder="••••••••"
           placeholderTextColor={colors.textMuted}
           secureTextEntry
+          autoCapitalize="none"
+          autoCorrect={false}
           editable={!loading}
           onSubmitEditing={handleLogin}
         />

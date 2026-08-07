@@ -14,8 +14,10 @@ import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { Usuario } from '../types';
 
-const TOKEN_KEY = '@umarizal:token';
-const USER_KEY = '@umarizal:user';
+// ⚠️ SecureStore (Android) só aceita chaves com letras/números, '.', '-', '_'
+// (NÃO aceita '@', ':' — causa 'invalid key provided to SecureStore')
+const TOKEN_KEY = 'umarizal.token';
+const USER_KEY = '@umarizal:user'; // AsyncStorage aceita qualquer string
 
 interface AuthState {
   token: string | null;
