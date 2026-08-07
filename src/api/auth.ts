@@ -8,14 +8,17 @@
 import api from './client';
 import type { LoginResponse, Usuario, ApiSuccessResponse } from '../types';
 
-/** Login com rememberMe: true → token de 30 dias (app mobile) */
+/**
+ * Login com rememberMe: true → token de 30 dias (app mobile)
+ * O backend responde { success, data: { token, usuario } } — desempacotamos aqui.
+ */
 export async function login(email: string, senha: string, rememberMe = false): Promise<LoginResponse> {
-  const { data } = await api.post<LoginResponse>('/auth/login', {
+  const { data } = await api.post<ApiSuccessResponse<LoginResponse>>('/auth/login', {
     email,
     senha,
     rememberMe,
   });
-  return data;
+  return data.data;
 }
 
 /** Valida o token e retorna os dados do usuário */
