@@ -41,14 +41,19 @@ export default function LoginScreen() {
     setErro(null);
     try {
       const res = await login(email.trim(), senha, rememberMe);
+      if (!res?.token) {
+        setErro('Resposta do servidor sem token (formato inesperado).');
+        return;
+      }
       await setSession(res.token, res.usuario);
     } catch (err: any) {
-      const msg =
+      const detalhe =
         err?.response?.data?.error?.message ||
         (err?.response?.status === 401
           ? 'Usuário ou senha inválidos'
-          : 'Não foi possível conectar. Verifique sua internet.');
-      setErro(msg);
+          : err?.message || 'Erro desconhecido');
+      setErro(`Não foi possível conectar: ${detalhe}`);
+      console.error('[Login] erro:', JSON.stringify({ message: err?.message, status: err?.response?.status, data: err?.response?.data }, null, 2));
     } finally {
       setLoading(false);
     }

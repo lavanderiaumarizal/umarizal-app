@@ -14,7 +14,7 @@ export const API_URL = 'https://api.lavanderiaumarizal.com.br/api';
 
 const api = axios.create({
   baseURL: API_URL,
-  timeout: 15000,
+  timeout: 30000,
   headers: { 'Content-Type': 'application/json' },
 });
 
