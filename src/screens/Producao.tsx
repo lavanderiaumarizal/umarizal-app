@@ -24,6 +24,7 @@ import {
 } from 'react-native';
 import type { RouteProp } from '@react-navigation/native';
 import { colors, primaryGradient } from '../theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { kanbanPorPerfil, ETAPA_NOME, type KanbanItem } from '../api/kanban';
 import { iniciarEtapa, concluirEtapa } from '../api/etapas';
 import CameraCapture from '../components/CameraCapture';
@@ -49,6 +50,7 @@ type Acao =
 
 export default function ProducaoScreen({ route }: { route: RouteProp<RootStackParamList, 'Producao'> }) {
   const { perfil } = route.params;
+  const insets = useSafeAreaInsets();
   const user = useAuthStore((s) => s.user);
   const responsavel = user?.nome ?? 'Produção';
 
@@ -159,7 +161,7 @@ export default function ProducaoScreen({ route }: { route: RouteProp<RootStackPa
         </View>
       ) : (
         <ScrollView
-          contentContainerStyle={styles.content}
+          contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 40 }]}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
           }

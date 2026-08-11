@@ -20,6 +20,7 @@ import {
 } from 'react-native';
 import type { RouteProp } from '@react-navigation/native';
 import { colors, primaryGradient } from '../theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getOrcamento, getFotos, uploadFotos, deleteFoto, type Foto, type OrcamentoDocumentacao } from '../api/orcamentos';
 import { getEtapas, iniciarEtapa, concluirEtapa } from '../api/etapas';
 import CameraCapture from '../components/CameraCapture';
@@ -32,6 +33,7 @@ export default function DocumentacaoOrcamentoScreen({
   route: RouteProp<RootStackParamList, 'DocumentacaoOrcamento'>;
 }) {
   const { orcamentoId } = route.params;
+  const insets = useSafeAreaInsets();
   const user = useAuthStore((s) => s.user);
   const responsavel = user?.nome ?? 'Expedição';
 
@@ -134,7 +136,7 @@ export default function DocumentacaoOrcamentoScreen({
   const fotosPorItem = (itemId: string) => fotos.filter((f) => f.itemId === itemId);
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 40 }]}>
       <Text style={styles.codigo}>{orcamento?.codigo}</Text>
       <Text style={styles.cliente} numberOfLines={1}>{orcamento?.cliente.nome}</Text>
 

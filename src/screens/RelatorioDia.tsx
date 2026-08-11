@@ -17,6 +17,7 @@ import {
   RefreshControl,
   Share,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, primaryGradient } from '../theme';
 import { getRelatorioDia, type RelatorioDia } from '../api/relatorio';
 import { useAuthStore } from '../store/authStore';
@@ -25,6 +26,11 @@ import Preco from '../components/Preco';
 function fmtDataBR(iso: string): string {
   const [y, m, d] = iso.split('-');
   return `${d}/${m}/${y}`;
+}
+
+/** Data local no formato YYYY-MM-DD */
+function fmtDataISO(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
 /** Formata moeda para o texto de compartilhamento (só admin usa) */
@@ -36,7 +42,9 @@ function fmtMoeda(v?: number): string {
 export default function RelatorioDiaScreen() {
   const user = useAuthStore((s) => s.user);
   const ehAdmin = (user?.perfis ?? []).includes('admin');
+  const insets = useSafeAreaInsets();
 
+  const [data, setData] = useState(() => new Date());
   const [relatorio, setRelatorio] = useState<RelatorioDia | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -46,16 +54,14 @@ export default function RelatorioDiaScreen() {
     setLoading(true);
     setErro(null);
     try {
-      const hoje = new Date();
-      const iso = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
-      const r = await getRelatorioDia(iso);
+      const r = await getRelatorioDia(fmtDataISO(data));
       setRelatorio(r);
     } catch {
       setErro('Não foi possível carregar o relatório.');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [data]);
 
   useEffect(() => {
     void carregar();
@@ -116,12 +122,30 @@ export default function RelatorioDiaScreen() {
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={styles.content}
+      contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 40 }]}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
       }
     >
-      <Text style={styles.data}>📅 {fmtDataBR(relatorio.data)}</Text>
+      {/* Seletor de data */}
+      <View style={styles.dataRow}>
+        <TouchableOpacity
+          style={styles.dataBtn}
+          onPress={() => setData(new Date(data.getTime() - 86400000))}
+        >
+          <Text style={styles.dataBtnText}>◀</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.dataCentro} onPress={() => setData(new Date())}>
+          <Text style={styles.dataTexto}>📅 {fmtDataBR(relatorio.data)}</Text>
+          <Text style={styles.dataHoje}>tocar para voltar a hoje</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.dataBtn}
+          onPress={() => setData(new Date(data.getTime() + 86400000))}
+        >
+          <Text style={styles.dataBtnText}>▶</Text>
+        </TouchableOpacity>
+      </View>
 
       {/* Totais */}
       <View style={styles.grid}>
@@ -140,10 +164,10 @@ export default function RelatorioDiaScreen() {
       {/* Por tipo de serviço */}
       <Text style={styles.secao}>🧺 Por tipo de serviço</Text>
       <View style={styles.card}>
-        {relatorio.porTipoServico.length === 0 ? (
-          <Text style={styles.vazio}>Nenhum serviço coletado hoje.</Text>
+        {(relatorio.porTipoServico ?? []).length === 0 ? (
+          <Text style={styles.vazio}>Nenhum serviço registrado neste dia.</Text>
         ) : (
-          relatorio.porTipoServico.map((t) => (
+          (relatorio.porTipoServico ?? []).map((t) => (
             <View key={t.categoria} style={styles.linha}>
               <Text style={styles.linhaLabel}>{t.categoria}</Text>
               <View style={styles.linhaRight}>
@@ -158,10 +182,10 @@ export default function RelatorioDiaScreen() {
       {/* Tempo médio por fase */}
       <Text style={styles.secao}>⏱️ Tempo médio por fase</Text>
       <View style={styles.card}>
-        {relatorio.tempoMedioFase.length === 0 ? (
-          <Text style={styles.vazio}>Sem dados de fases concluídas hoje.</Text>
+        {(relatorio.tempoMedioFase ?? []).length === 0 ? (
+          <Text style={styles.vazio}>Sem fases concluídas neste dia.</Text>
         ) : (
-          relatorio.tempoMedioFase.map((f) => (
+          (relatorio.tempoMedioFase ?? []).map((f) => (
             <View key={f.fase} style={styles.linha}>
               <Text style={styles.linhaLabel}>{f.label}</Text>
               <Text style={styles.linhaQtd}>{f.minutosMedios} min</Text>
@@ -186,6 +210,23 @@ const styles = StyleSheet.create({
   botaoPrimario: { backgroundColor: primaryGradient[1], borderRadius: 10, paddingVertical: 12, paddingHorizontal: 24 },
   botaoPrimarioText: { color: '#fff', fontWeight: 'bold' },
   data: { color: colors.textSecondary, fontSize: 13, marginBottom: 12 },
+  dataRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 14,
+    backgroundColor: colors.activeBg,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    borderRadius: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+  },
+  dataBtn: { paddingHorizontal: 14, paddingVertical: 4 },
+  dataBtnText: { color: colors.active, fontSize: 16, fontWeight: 'bold' },
+  dataCentro: { alignItems: 'center' },
+  dataTexto: { color: colors.text, fontSize: 14, fontWeight: 'bold' },
+  dataHoje: { color: colors.textMuted, fontSize: 10, marginTop: 2 },
   grid: { flexDirection: 'row', gap: 12 },
   card: {
     flex: 1,

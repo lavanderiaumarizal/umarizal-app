@@ -14,11 +14,12 @@ import {
   StyleSheet,
   ScrollView,
   ActivityIndicator,
-  RefreshControl,
+  TouchableOpacity,
 } from 'react-native';
 import type { RouteProp } from '@react-navigation/native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '../theme';
 import { kanbanPorPerfil, ETAPA_NOME } from '../api/kanban';
 import KanbanCard from '../components/KanbanCard';
@@ -52,13 +53,13 @@ export default function KanbanProducaoScreen({
 }) {
   const { perfil } = route.params;
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const insets = useSafeAreaInsets();
   const [dados, setDados] = useState<Record<string, any[]>>({
     pendente: [],
     em_andamento: [],
     concluida: [],
   });
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
   const carregar = useCallback(async () => {
@@ -77,12 +78,6 @@ export default function KanbanProducaoScreen({
     void carregar();
   }, [carregar]);
 
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    await carregar();
-    setRefreshing(false);
-  }, [carregar]);
-
   const total = COLUNAS.reduce((acc, c) => acc + (dados[c.key]?.length ?? 0), 0);
 
   return (
@@ -90,7 +85,12 @@ export default function KanbanProducaoScreen({
       {/* Cabeçalho */}
       <View style={styles.header}>
         <Text style={styles.title}>Kanban · {PERFIL_LABEL[perfil]}</Text>
-        <Text style={styles.total}>{total} tapetes</Text>
+        <View style={styles.headerRight}>
+          <Text style={styles.total}>{total} tapetes</Text>
+          <TouchableOpacity style={styles.atualizar} onPress={() => void carregar()} disabled={loading}>
+            <Text style={styles.atualizarText}>🔄 Atualizar</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {loading ? (
@@ -105,10 +105,7 @@ export default function KanbanProducaoScreen({
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.colunas}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
-          }
+          contentContainerStyle={[styles.colunas, { paddingBottom: insets.bottom + 24 }]}
         >
           {COLUNAS.map((coluna) => {
             const itens = dados[coluna.key] ?? [];
@@ -121,7 +118,11 @@ export default function KanbanProducaoScreen({
                   </View>
                 </View>
 
-                <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.colunaBody}>
+                <ScrollView
+                  showsVerticalScrollIndicator={false}
+                  nestedScrollEnabled
+                  contentContainerStyle={styles.colunaBody}
+                >
                   {itens.length === 0 ? (
                     <Text style={styles.vazio}>Nenhum tapete</Text>
                   ) : (
@@ -167,6 +168,24 @@ const styles = StyleSheet.create({
   total: {
     color: colors.textSecondary,
     fontSize: 13,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  atualizar: {
+    backgroundColor: colors.activeBg,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+  },
+  atualizarText: {
+    color: colors.active,
+    fontSize: 12,
+    fontWeight: 'bold',
   },
   center: {
     flex: 1,

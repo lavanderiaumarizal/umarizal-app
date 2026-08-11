@@ -153,6 +153,7 @@ export async function getAlmoxarifado(params: {
   status?: string;
   periodo?: string;
   tipo?: string;
+  data?: string;
 }): Promise<TapeteAlmoxarifado[]> {
   const { data } = await api.get<ApiSuccessResponse<TapeteAlmoxarifado[]>>('/orcamentos/almoxarifado', {
     params,

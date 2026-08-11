@@ -22,6 +22,7 @@ import {
 } from 'react-native';
 import type { RouteProp } from '@react-navigation/native';
 import { colors, primaryGradient } from '../theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getOrcamento, getFotos, type Foto } from '../api/orcamentos';
 import { getEtapas, iniciarEtapa, concluirEtapa, retornarEtapa, type EtapasResponse } from '../api/etapas';
 import EtapaTimeline from '../components/EtapaTimeline';
@@ -57,6 +58,7 @@ export default function DetalhesOrcamentoScreen({
   route: RouteProp<RootStackParamList, 'Detalhes'>;
 }) {
   const { orcamentoId } = route.params;
+  const insets = useSafeAreaInsets();
   const user = useAuthStore((s) => s.user);
   const perfis = user?.perfis ?? [];
   const responsavel = user?.nome ?? 'App';
@@ -218,7 +220,7 @@ export default function DetalhesOrcamentoScreen({
   const veEndereco = perfis.some((p) => VE_ENDERECO.includes(p));
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 40 }]}>
       {/* Cabeçalho */}
       <View style={styles.header}>
         <View>

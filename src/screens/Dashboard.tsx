@@ -23,6 +23,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, primaryGradient } from '../theme';
 import { useAuthStore } from '../store/authStore';
 import { useAppStore } from '../store/appStore';
@@ -54,6 +55,8 @@ function cardsDoPerfil(
   dados: { coletas: number | null; entregas: number | null },
   onAbrirRota?: () => void,
   onAbrirProducao?: () => void,
+  onAbrirColetas?: () => void,
+  onAbrirEntregas?: () => void,
 ): CardDef[] {
   switch (perfil) {
     case 'motorista':
@@ -70,15 +73,17 @@ function cardsDoPerfil(
           icon: '📦',
           title: 'Coletas Pendentes',
           value: dados.coletas,
-          subtitle: 'Atribuídas a você',
+          subtitle: 'Atribuídas a você · tocar para ver',
           accent: colors.brandLime,
+          onPress: onAbrirColetas,
         },
         {
           icon: '📦',
           title: 'Entregas Pendentes',
           value: dados.entregas,
-          subtitle: 'Atribuídas a você',
+          subtitle: 'Atribuídas a você · tocar para ver',
           accent: colors.brandGold,
+          onPress: onAbrirEntregas,
         },
         {
           icon: '✅',
@@ -117,6 +122,7 @@ function cardsDoPerfil(
 }
 
 export default function DashboardScreen() {
+  const insets = useSafeAreaInsets();
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
   const perfilAtivo = useAppStore((s) => s.perfilAtivo);
@@ -164,12 +170,17 @@ export default function DashboardScreen() {
     dados,
     () => navigation.navigate('RotaDoDia'),
     () => navigation.navigate('Producao', { perfil }),
+    () => navigation.navigate('MinhasColetas', { tipo: 'coleta' }),
+    () => navigation.navigate('MinhasColetas', { tipo: 'entrega' }),
   );
 
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={styles.content}
+      contentContainerStyle={[
+        styles.content,
+        { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 32 },
+      ]}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
     >
       {/* Header */}

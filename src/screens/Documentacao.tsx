@@ -18,11 +18,13 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { colors, primaryGradient } from '../theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { documentacaoPendente, type OrcamentoDocumentacao } from '../api/orcamentos';
 import type { RootStackParamList } from '../navigation/AppNavigator';
 
 export default function DocumentacaoScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const insets = useSafeAreaInsets();
   const [lista, setLista] = useState<OrcamentoDocumentacao[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -62,7 +64,7 @@ export default function DocumentacaoScreen() {
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={styles.content}
+      contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 40 }]}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
       }

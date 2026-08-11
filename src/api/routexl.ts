@@ -103,6 +103,18 @@ export function enderecoDoEvento(e: EventoCalendario): string {
   return partes.join('').trim();
 }
 
+/**
+ * Remove o prefixo de código ("ORC-XXX - ") do endereço, se presente.
+ * O backend grava o endereço do waypoint como "CODIGO - ENDERECO".
+ */
+export function limparEndereco(endereco: string): string {
+  const partes = endereco.split(' - ');
+  if (partes.length > 1 && !partes[0].includes(' ') && !partes[0].includes(',')) {
+    return partes.slice(1).join(' - ');
+  }
+  return endereco;
+}
+
 /** Abre o Google Maps para navegação até a parada (F19) */
 export function abrirMapsParada(endereco: string, lat?: number | null, lng?: number | null): void {
   // Sem Linking aqui — o caller (tela) decide (evita import de Linking no módulo de API)

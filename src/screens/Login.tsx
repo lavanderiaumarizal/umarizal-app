@@ -20,10 +20,12 @@ import {
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { colors, primaryGradient } from '../theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { login } from '../api/auth';
 import { useAuthStore } from '../store/authStore';
 
 export default function LoginScreen() {
+  const insets = useSafeAreaInsets();
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [rememberMe, setRememberMe] = useState(true);
@@ -71,7 +73,7 @@ export default function LoginScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 24 }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <StatusBar style="light" />

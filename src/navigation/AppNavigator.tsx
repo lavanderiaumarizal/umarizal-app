@@ -20,6 +20,7 @@ import AlmoxarifadoScreen from '../screens/Almoxarifado';
 import RelatorioDiaScreen from '../screens/RelatorioDia';
 import DocumentacaoScreen from '../screens/Documentacao';
 import DocumentacaoOrcamentoScreen from '../screens/DocumentacaoOrcamento';
+import MinhasColetasEntregasScreen from '../screens/MinhasColetasEntregas';
 import type { Perfil } from '../types';
 
 export type RootStackParamList = {
@@ -33,6 +34,7 @@ export type RootStackParamList = {
   Relatorio: undefined;
   Documentacao: undefined;
   DocumentacaoOrcamento: { orcamentoId: string };
+  MinhasColetas: { tipo: 'coleta' | 'entrega' };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -109,6 +111,14 @@ export default function AppNavigator() {
               name="DocumentacaoOrcamento"
               component={DocumentacaoOrcamentoScreen}
               options={{ title: 'Fotografar Itens', headerShown: true }}
+            />
+            <Stack.Screen
+              name="MinhasColetas"
+              component={MinhasColetasEntregasScreen}
+              options={({ route }) => ({
+                title: route.params.tipo === 'coleta' ? 'Minhas Coletas' : 'Minhas Entregas',
+                headerShown: true,
+              })}
             />
           </>
         ) : (

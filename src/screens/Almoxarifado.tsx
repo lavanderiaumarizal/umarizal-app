@@ -19,6 +19,7 @@ import {
   ActivityIndicator,
   RefreshControl,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, primaryGradient } from '../theme';
 import { getAlmoxarifado, carregarOrcamento, descarregarOrcamento, type TapeteAlmoxarifado } from '../api/orcamentos';
 
@@ -50,11 +51,22 @@ function fmtData(iso?: string | null): string {
   return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
 }
 
+/** Data local no formato YYYY-MM-DD (para o filtro do backend) */
+function fmtDataISO(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function fmtDataBR(d: Date): string {
+  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
 export default function AlmoxarifadoScreen() {
+  const insets = useSafeAreaInsets();
   const [busca, setBusca] = useState('');
   const [status, setStatus] = useState('');
   const [periodo, setPeriodo] = useState('');
   const [tipo, setTipo] = useState('');
+  const [data, setData] = useState(() => new Date());
 
   const [tapetes, setTapetes] = useState<TapeteAlmoxarifado[]>([]);
   const [loading, setLoading] = useState(true);
@@ -71,6 +83,7 @@ export default function AlmoxarifadoScreen() {
         status: status || undefined,
         periodo: periodo || undefined,
         tipo: tipo || undefined,
+        data: fmtDataISO(data),
       });
       setTapetes(lista);
     } catch {
@@ -78,7 +91,7 @@ export default function AlmoxarifadoScreen() {
     } finally {
       setLoading(false);
     }
-  }, [busca, status, periodo, tipo]);
+  }, [busca, status, periodo, tipo, data]);
 
   useEffect(() => {
     void carregar();
@@ -154,6 +167,26 @@ export default function AlmoxarifadoScreen() {
         </ScrollView>
       </View>
 
+      {/* Data da rota (o que carregar na kombi no dia) */}
+      <View style={styles.dataRow}>
+        <TouchableOpacity
+          style={styles.dataBtn}
+          onPress={() => setData(new Date(data.getTime() - 86400000))}
+        >
+          <Text style={styles.dataBtnText}>◀</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.dataCentro} onPress={() => setData(new Date())}>
+          <Text style={styles.dataTitulo}>🚚 Carregar no dia</Text>
+          <Text style={styles.dataTexto}>{fmtDataBR(data)}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.dataBtn}
+          onPress={() => setData(new Date(data.getTime() + 86400000))}
+        >
+          <Text style={styles.dataBtnText}>▶</Text>
+        </TouchableOpacity>
+      </View>
+
       {loading ? (
         <View style={styles.center}>
           <ActivityIndicator size="large" color={colors.primary} />
@@ -167,7 +200,7 @@ export default function AlmoxarifadoScreen() {
         </View>
       ) : (
         <ScrollView
-          contentContainerStyle={styles.lista}
+          contentContainerStyle={[styles.lista, { paddingBottom: insets.bottom + 32 }]}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
           }
@@ -249,6 +282,24 @@ const styles = StyleSheet.create({
   },
   filtros: { marginBottom: 4 },
   filtroRow: { paddingHorizontal: 12, gap: 8 },
+  dataRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginHorizontal: 12,
+    marginVertical: 8,
+    backgroundColor: colors.activeBg,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    borderRadius: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+  },
+  dataBtn: { paddingHorizontal: 14, paddingVertical: 4 },
+  dataBtnText: { color: colors.active, fontSize: 16, fontWeight: 'bold' },
+  dataCentro: { alignItems: 'center' },
+  dataTitulo: { color: colors.active, fontSize: 11, fontWeight: 'bold' },
+  dataTexto: { color: colors.text, fontSize: 14, fontWeight: 'bold', marginTop: 2 },
   chip: {
     backgroundColor: colors.surface,
     borderWidth: 1,

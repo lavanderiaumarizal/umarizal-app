@@ -24,12 +24,14 @@ import {
   Linking,
 } from 'react-native';
 import { colors, primaryGradient } from '../theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   getRotaDoDia,
   getEventosDia,
   optimizeRota,
   saveRota,
   enderecoDoEvento,
+  limparEndereco,
   type RotaDoDia,
   type Stop,
 } from '../api/routexl';
@@ -57,6 +59,7 @@ type AcaoModal =
   | null;
 
 export default function RotaDoDiaScreen() {
+  const insets = useSafeAreaInsets();
   const [data, setData] = useState(() => new Date());
   const [rota, setRota] = useState<RotaDoDia | null>(null);
   const [loading, setLoading] = useState(true);
@@ -135,13 +138,19 @@ export default function RotaDoDiaScreen() {
     try {
       const invertidos = [...rota.stops]
         .reverse()
-        .map((s) => ({
-          orcamentoId: s.orcamentoId,
-          tipo: s.tipo,
-          endereco: s.endereco?.logradouro ?? '',
-          codigo: s.endereco?.logradouro?.split(' - ')[0] ?? s.orcamentoId,
-          servicetime: s.tempoServicoMinutos ?? 20,
-        }));
+        .map((s) => {
+          // O logradouro vem como "CODIGO - ENDERECO": extrai o código e envia
+          // o endereço limpo (o backend readiciona o prefixo — evita duplicação)
+          const logradouro = s.endereco?.logradouro ?? '';
+          const [codigo = '', ...resto] = logradouro.split(' - ');
+          return {
+            orcamentoId: s.orcamentoId,
+            tipo: s.tipo,
+            endereco: resto.join(' - ') || logradouro,
+            codigo: codigo || s.orcamentoId,
+            servicetime: s.tempoServicoMinutos ?? 20,
+          };
+        });
 
       const otimizada = await optimizeRota(invertidos, { skipOptimisation: true });
       await saveRota(fmtData(data), otimizada, invertidos);
@@ -153,9 +162,50 @@ export default function RotaDoDiaScreen() {
     }
   }
 
-  /** Abre o Google Maps na parada */
+  /** F14.4 — Salvar a rota ATUAL sem regenerar (evita distorção/coletas sumindo) */
+  async function salvarRotaAtual() {
+    if (!rota || rota.stops.length === 0) return;
+    setGerando(true);
+    setErro(null);
+    try {
+      const otimizada = {
+        tourId: '',
+        feasible: true,
+        totalDistanceKm: rota.totalDistanceKm ?? 0,
+        totalDurationMin: rota.totalDurationMinutes ?? 0,
+        waypoints: rota.allWaypoints.map((w) => ({
+          ordem: w.ordem,
+          address: w.enderecoCompleto ?? '',
+          lat: w.latitude ?? 0,
+          lng: w.longitude ?? 0,
+          arrivalTime: w.horarioChegada ?? '',
+          distance: w.distanciaKm ?? 0,
+          type: w.tipo,
+        })),
+        rawResponse: {},
+      };
+      const stops = rota.stops.map((s) => {
+        const logradouro = s.endereco?.logradouro ?? '';
+        const [codigo = '', ...resto] = logradouro.split(' - ');
+        return {
+          orcamentoId: s.orcamentoId,
+          tipo: s.tipo,
+          endereco: resto.join(' - ') || logradouro,
+          codigo: codigo || s.orcamentoId,
+          servicetime: s.tempoServicoMinutos ?? 20,
+        };
+      });
+      await saveRota(fmtData(data), otimizada, stops);
+    } catch {
+      setErro('Não foi possível salvar a rota.');
+    } finally {
+      setGerando(false);
+    }
+  }
+
+  /** Abre o Google Maps na parada (endereço sem o prefixo do código) */
   function navegarParada(stop: Stop) {
-    const endereco = stop.endereco?.logradouro ?? '';
+    const endereco = limparEndereco(stop.endereco?.logradouro ?? '');
     const url = `https://maps.google.com/?daddr=${encodeURIComponent(endereco)}`;
     void Linking.openURL(url).catch(() => undefined);
   }
@@ -257,7 +307,7 @@ export default function RotaDoDiaScreen() {
         </View>
       ) : (
         <ScrollView
-          contentContainerStyle={styles.lista}
+          contentContainerStyle={[styles.lista, { paddingBottom: insets.bottom + 24 }]}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
           }
@@ -282,7 +332,7 @@ export default function RotaDoDiaScreen() {
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.botaoSalvar, gerando && styles.botaoDisabled]}
-              onPress={() => void gerarRota()}
+              onPress={() => void salvarRotaAtual()}
               disabled={gerando}
             >
               <Text style={styles.botaoSalvarText}>💾 Salvar Rota</Text>
@@ -306,7 +356,7 @@ export default function RotaDoDiaScreen() {
                       {ehColeta ? 'COLETA' : 'ENTREGA'} · {stop.horarioChegada ?? '--:--'}
                     </Text>
                     <Text style={styles.paradaEndereco} numberOfLines={2}>
-                      {stop.endereco?.logradouro ?? 'Endereço não informado'}
+                      {limparEndereco(stop.endereco?.logradouro ?? 'Endereço não informado')}
                     </Text>
                   </View>
                 </View>
@@ -348,7 +398,7 @@ export default function RotaDoDiaScreen() {
         <View style={styles.modalWrap}>
           <View style={styles.modalCard}>
             <Text style={styles.modalTitle}>📦 Registrar Coleta</Text>
-            <Text style={styles.modalStop}>{acao?.stop.endereco?.logradouro}</Text>
+            <Text style={styles.modalStop}>{limparEndereco(acao?.stop.endereco?.logradouro ?? '')}</Text>
 
             <View style={styles.fotoRow}>
               {fotos.map((f, i) => (
@@ -416,7 +466,7 @@ export default function RotaDoDiaScreen() {
         <View style={styles.modalWrap}>
           <View style={styles.modalCard}>
             <Text style={styles.modalTitle}>🚚 Registrar Entrega</Text>
-            <Text style={styles.modalStop}>{acao?.stop.endereco?.logradouro}</Text>
+            <Text style={styles.modalStop}>{limparEndereco(acao?.stop.endereco?.logradouro ?? '')}</Text>
 
             <SignaturePad onOK={setAssinatura} onEmpty={() => setAssinatura(null)} />
 
