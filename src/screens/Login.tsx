@@ -7,7 +7,7 @@
  * - Salva token no SecureStore + usuário no AsyncStorage
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -31,6 +31,16 @@ export default function LoginScreen() {
   const [erro, setErro] = useState<string | null>(null);
 
   const setSession = useAuthStore((s) => s.setSession);
+  const sessionExpired = useAuthStore((s) => s.sessionExpired);
+  const setSessionExpired = useAuthStore((s) => s.setSessionExpired);
+
+  // R-1: sessão encerrada por 401 (token expirado/inválido) → mensagem clara
+  useEffect(() => {
+    if (sessionExpired) {
+      setErro('Sessão expirada. Entre novamente.');
+      setSessionExpired(false);
+    }
+  }, [sessionExpired, setSessionExpired]);
 
   async function handleLogin() {
     if (!email.trim() || !senha) {

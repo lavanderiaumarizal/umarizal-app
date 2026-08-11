@@ -4,7 +4,9 @@
  * - Token JWT → expo-secure-store (Keychain/EncryptedSharedPreferences)
  * - Perfil do usuário → AsyncStorage (dados não sensíveis)
  * - Sessão persistente: nunca desloga a menos que o usuário clique em "Sair"
- *   (o token tem validade de 30 dias com rememberMe e é renovado a cada request)
+ *   (o token tem validade de 30 dias com rememberMe; o backend valida o token a
+ *   cada request — se expirado/inválido, o app encerra a sessão com a mensagem
+ *   "Sessão expirada" — ver client.ts R-1)
  *
  * Ref.: doc/5_DESENVOLVIMENTO.md (5.5) e tarefa F3/F7.2
  */
@@ -24,6 +26,9 @@ interface AuthState {
   user: Usuario | null;
   /** true enquanto carrega a sessão persistida na abertura do app */
   isLoading: boolean;
+  /** true quando uma sessão foi encerrada por 401 (token expirado/inválido) */
+  sessionExpired: boolean;
+  setSessionExpired: (value: boolean) => void;
   setToken: (token: string) => Promise<void>;
   setUser: (user: Usuario) => Promise<void>;
   setSession: (token: string, user: Usuario) => Promise<void>;
@@ -35,6 +40,9 @@ export const useAuthStore = create<AuthState>((set) => ({
   token: null,
   user: null,
   isLoading: true,
+  sessionExpired: false,
+
+  setSessionExpired: (value: boolean) => set({ sessionExpired: value }),
 
   setToken: async (token: string) => {
     await SecureStore.setItemAsync(TOKEN_KEY, token); // Keychain seguro
