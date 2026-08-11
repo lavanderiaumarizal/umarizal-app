@@ -20,7 +20,7 @@
 | Fase | Equipe | Agentes | Status |
 |------|--------|---------|--------|
 | 1 | 🏢 **Gestão** | 6 (CEOGPT → SecurityAuditGPT) | ✅ Concluída |
-| 2 | 📝 **Documentação** | 8 (SOCGPT → RepoCreditsAdderGPT) | ⏳ Aguardando OK |
+| 2 | 📝 **Documentação** | 8 (SOCGPT → RepoCreditsAdderGPT) | ✅ Concluída |
 | 3 | ⚖️ **Jurídica** | 4 (CLOGPT → ComplianceGPT) | ⏳ Aguardando OK |
 | 4 | 📢 **Marketing** | 4 (CMOGPT → Marktiva.IA) | ⏳ Aguardando OK |
 | 5 | 📋 **Projetos** | 5 (AgileScrumGPT → ScrumMasterTechGPT) | ⏳ Aguardando OK |
@@ -42,18 +42,18 @@
 | 5 | **BlackBeltIA** | Processo: as 12 etapas mapeadas em `2_12_ETAPAS.md`; seed B16 criou 540 etapas em produção | Gargalo identificado: dependência motorista→expedição (documentação só após F1_COLETADO) — monitorar com tempo de ciclo | ✅ |
 | 6 | **SecurityAuditGPT** | Auditoria de segurança real (ver relatório abaixo) | 3 recomendações priorizadas (2 de baixo risco, 1 documental) | ✅ |
 
-### FASE 2 — 📝 DOCUMENTAÇÃO (8) ⏳
+### FASE 2 — 📝 DOCUMENTAÇÃO (8) ✅
 
 | # | Agente | ✅ Validação | 🛠️ Aprimoramento | Status |
 |---|--------|-------------|-------------------|--------|
-| 7 | **SOCGPT** | Plano de documentação vs. docs existentes (`doc/` com 1–8 + detalhamentos) | Índice central de documentação | ⏳ |
-| 8 | **ObsidianArchitectGPT** | Grafo de conhecimento: ligações entre docs | Mapa de navegação da doc (links entre arquivos) | ⏳ |
-| 9 | **PRDGPT** | PRD/funcionalidades vs. implementação (F1–F36) | PRD consolidado e atualizado | ⏳ |
-| 10 | **UMLArchitectGPT** | Arquitetura e fluxos | Diagrama de sequência do fluxo do motorista (rota→coleta→entrega) | ⏳ |
-| 11 | **ReadmeGenGPT** | README do repositório | README completo (instalação, build APK, endpoints) | ⏳ |
-| 12 | **ChronosGPT** | Histórico de commits e versões | `CHANGELOG.md` do app | ⏳ |
-| 13 | **ZetaIA** | Necessidade de novos agentes/automações | Sob demanda | ⏳ |
-| 14 | **RepoCreditsAdderGPT** | Headers de crédito | Créditos padronizados | ⏳ |
+| 7 | **SOCGPT** | Plano de documentação vs. docs existentes (`doc/` com 1–8 + detalhamentos) | Índice central criado: [`INDICE_DOCUMENTACAO.md`](./INDICE_DOCUMENTACAO.md) (23 documentos indexados) | ✅ |
+| 8 | **ObsidianArchitectGPT** | Grafo de conhecimento: ligações entre docs | Mapa de navegação criado: [`MAPA_NAVEGACAO.md`](./MAPA_NAVEGACAO.md) (grafo + guia de navegação) | ✅ |
+| 9 | **PRDGPT** | PRD/funcionalidades vs. implementação (F1–F36) | PRD consolidado: [`PRD.md`](./PRD.md) (16 RF mapeados, RNFs, MoSCoW) | ✅ |
+| 10 | **UMLArchitectGPT** | Arquitetura e fluxos | Diagramas criados: [`DIAGRAMAS.md`](./DIAGRAMAS.md) (entidades, sequência motorista, documentação, camadas) | ✅ |
+| 11 | **ReadmeGenGPT** | README do repositório | README da raiz criado: [`README.md`](../README.md) (stack, estrutura, setup, build APK) | ✅ |
+| 12 | **ChronosGPT** | Histórico de commits e versões | `CHANGELOG.md` criado a partir do git log (54 commits, v0.3.0→v1.0.0) | ✅ |
+| 13 | **ZetaIA** | Necessidade de novos agentes/automações | Registrado: **sob demanda** — sem necessidade no momento | ✅ |
+| 14 | **RepoCreditsAdderGPT** | Headers de crédito | Créditos padronizados aplicados em todos os documentos novos (`<!-- Créditos -->`) | ✅ |
 
 ### FASE 3 — ⚖️ JURÍDICA (4) ⏳
 
@@ -128,6 +128,25 @@
 ---
 
 ## 📝 Relatórios por Fase
+
+### ✅ FASE 2 — DOCUMENTAÇÃO (concluída em 2026-08-10)
+
+**Entregáveis criados (6 novos documentos + README da raiz):**
+
+| # | Agente | Entregável | Arquivo |
+|---|--------|-----------|---------|
+| 7 | SOCGPT | Índice central da documentação | [`doc/INDICE_DOCUMENTACAO.md`](./INDICE_DOCUMENTACAO.md) |
+| 8 | ObsidianArchitectGPT | Grafo/navegação entre documentos | [`doc/MAPA_NAVEGACAO.md`](./MAPA_NAVEGACAO.md) |
+| 9 | PRDGPT | PRD consolidado (RF/RNF/MoSCoW) | [`doc/PRD.md`](./PRD.md) |
+| 10 | UMLArchitectGPT | Diagramas (entidades, sequências, camadas) | [`doc/DIAGRAMAS.md`](./DIAGRAMAS.md) |
+| 11 | ReadmeGenGPT | README completo da raiz do repositório | [`README.md`](../README.md) |
+| 12 | ChronosGPT | CHANGELOG (v0.3.0 → v1.0.0) | [`doc/CHANGELOG.md`](./CHANGELOG.md) |
+| 13 | ZetaIA | Sob demanda — sem necessidade | — |
+| 14 | RepoCreditsAdderGPT | Créditos padronizados nos documentos novos | todos os arquivos novos |
+
+**Validação:** PRD confere com a implementação (16/16 RFs ✅); diagramas refletem o código real (schema Prisma, rotas B9/B10/B21/B22/B23); CHANGELOG derivado dos 54 commits do repositório.
+
+---
 
 ### ✅ FASE 1 — GESTÃO (concluída em 2026-08-10)
 

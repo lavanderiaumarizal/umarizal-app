@@ -20,3 +20,9 @@ Substitui a planilha manual de controle de entrada/saída de tapetes e gerencia 
 | 8 | [`8_ADMIN_PAINEL_ADEQUACOES.md`](./8_ADMIN_PAINEL_ADEQUACOES.md) | Adequações do painel admin (pós-app) |
 | — | [`TAREFAS.md`](./TAREFAS.md) | 78 tarefas em 6 sprints |
 | — | [`Pesquisa-umarizal.app.md`](./Pesquisa-umarizal.app.md) | Pesquisa complementar de outra IA |
+| — | [`INDICE_DOCUMENTACAO.md`](./INDICE_DOCUMENTACAO.md) | Índice central da documentação |
+| — | [`MAPA_NAVEGACAO.md`](./MAPA_NAVEGACAO.md) | Grafo/navegação entre documentos |
+| — | [`PRD.md`](./PRD.md) | Especificação de produto consolidada |
+| — | [`DIAGRAMAS.md`](./DIAGRAMAS.md) | Diagramas de arquitetura e sequência |
+| — | [`CHANGELOG.md`](./CHANGELOG.md) | Histórico de versões |
+| — | [`ORQUESTRACAO_48_AGENTES.md`](./ORQUESTRACAO_48_AGENTES.md) | Validação dos 48 agentes (plano + fases) |
