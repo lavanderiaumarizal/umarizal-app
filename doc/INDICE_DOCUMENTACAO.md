@@ -22,6 +22,10 @@
 | 13 | [`MAPA_NAVEGACAO.md`](./MAPA_NAVEGACAO.md) | Grafo | Mapa de navegação entre documentos | ✅ Novo |
 | 14 | [`CHANGELOG.md`](./CHANGELOG.md) | Gestão | Histórico de versões do app | ✅ Novo |
 | 15 | [`ORQUESTRACAO_48_AGENTES.md`](./ORQUESTRACAO_48_AGENTES.md) | Gestão | Validação dos 48 agentes (plano + relatórios por fase) | 🟡 Ativo |
+| 16 | [`LEGAL_PARECER.md`](./LEGAL_PARECER.md) | Jurídico | Parecer de exposição jurídica (CLOGPT) | ✅ |
+| 17 | [`LEGAL_LGPD.md`](./LEGAL_LGPD.md) | Jurídico | Mapa de dados, retenção e direitos (LGPDGPT) | ✅ |
+| 18 | [`LEGAL_CONSENTIMENTO.md`](./LEGAL_CONSENTIMENTO.md) | Jurídico | Aviso de privacidade + termo de assinatura (ContractGPT) | ✅ |
+| 19 | [`LEGAL_COMPLIANCE.md`](./LEGAL_COMPLIANCE.md) | Jurídico | Checklist LGPD + plano de ação (ComplianceGPT) | ✅ |
 | 16 | [`SPRINT1_B1_DETALHAMENTO.md`](./SPRINT1_B1_DETALHAMENTO.md) | Detalhamento | Tabela `etapas_producao` | ✅ |
 | 17 | [`SPRINT1_B2_DETALHAMENTO.md`](./SPRINT1_B2_DETALHAMENTO.md) | Detalhamento | Tabela `carregamento_veiculo` | ✅ |
 | 18 | [`SPRINT1_B3_DETALHAMENTO.md`](./SPRINT1_B3_DETALHAMENTO.md) | Detalhamento | Multi-perfil (`perfisApp`) | ✅ |

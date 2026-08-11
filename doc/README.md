@@ -26,3 +26,7 @@ Substitui a planilha manual de controle de entrada/saída de tapetes e gerencia 
 | — | [`DIAGRAMAS.md`](./DIAGRAMAS.md) | Diagramas de arquitetura e sequência |
 | — | [`CHANGELOG.md`](./CHANGELOG.md) | Histórico de versões |
 | — | [`ORQUESTRACAO_48_AGENTES.md`](./ORQUESTRACAO_48_AGENTES.md) | Validação dos 48 agentes (plano + fases) |
+| — | [`LEGAL_PARECER.md`](./LEGAL_PARECER.md) | Parecer jurídico (CLOGPT) |
+| — | [`LEGAL_LGPD.md`](./LEGAL_LGPD.md) | LGPD: mapa de dados e retenção |
+| — | [`LEGAL_CONSENTIMENTO.md`](./LEGAL_CONSENTIMENTO.md) | Aviso de privacidade + termo de assinatura |
+| — | [`LEGAL_COMPLIANCE.md`](./LEGAL_COMPLIANCE.md) | Checklist de conformidade LGPD |

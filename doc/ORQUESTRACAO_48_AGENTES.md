@@ -21,7 +21,7 @@
 |------|--------|---------|--------|
 | 1 | 🏢 **Gestão** | 6 (CEOGPT → SecurityAuditGPT) | ✅ Concluída |
 | 2 | 📝 **Documentação** | 8 (SOCGPT → RepoCreditsAdderGPT) | ✅ Concluída |
-| 3 | ⚖️ **Jurídica** | 4 (CLOGPT → ComplianceGPT) | ⏳ Aguardando OK |
+| 3 | ⚖️ **Jurídica** | 4 (CLOGPT → ComplianceGPT) | ✅ Concluída |
 | 4 | 📢 **Marketing** | 4 (CMOGPT → Marktiva.IA) | ⏳ Aguardando OK |
 | 5 | 📋 **Projetos** | 5 (AgileScrumGPT → ScrumMasterTechGPT) | ⏳ Aguardando OK |
 | 6 | 💻 **Desenvolvedores** | 21 (CTOGPT → TestAutomationGPT) | ⏳ Aguardando OK |
@@ -55,14 +55,16 @@
 | 13 | **ZetaIA** | Necessidade de novos agentes/automações | Registrado: **sob demanda** — sem necessidade no momento | ✅ |
 | 14 | **RepoCreditsAdderGPT** | Headers de crédito | Créditos padronizados aplicados em todos os documentos novos (`<!-- Créditos -->`) | ✅ |
 
-### FASE 3 — ⚖️ JURÍDICA (4) ⏳
+### FASE 3 — ⚖️ JURÍDICA (4) ✅
 
 | # | Agente | ✅ Validação | 🛠️ Aprimoramento | Status |
 |---|--------|-------------|-------------------|--------|
-| 15 | **CLOGPT** | Exposição jurídica do app (uso interno da lavanderia) | Parecer de riscos | ⏳ |
-| 16 | **LGPDGPT** | Dados pessoais no app: nome/telefone de clientes, **assinaturas digitais** (coleta/entrega), fotos, geolocalização | Política de retenção + aviso ao usuário | ⏳ |
-| 17 | **ContractGPT** | Termos de uso/consentimento | Minuta de consentimento para assinatura digital | ⏳ |
-| 18 | **ComplianceGPT** | Conformidade LGPD no armazenamento | Checklist de conformidade | ⏳ |
+| 15 | **CLOGPT** | Exposição jurídica do app de uso interno (dados de clientes, assinaturas, fotos, geolocalização) | Parecer emitido: [`LEGAL_PARECER.md`](./LEGAL_PARECER.md) — risco BAIXO-MÉDIO + 4 recomendações | ✅ |
+| 16 | **LGPDGPT** | Dados pessoais reais no schema: `Cliente` (CPF/endereço/coordenadas), assinaturas digitais, fotos, geolocalização do aceite | Mapa de dados + retenção + direitos do titular: [`LEGAL_LGPD.md`](./LEGAL_LGPD.md) | ✅ |
+| 17 | **ContractGPT** | Necessidade de consentimento para assinatura digital | Minutas prontas: [`LEGAL_CONSENTIMENTO.md`](./LEGAL_CONSENTIMENTO.md) (aviso de privacidade + termo + cláusula contratual) | ✅ |
+| 18 | **ComplianceGPT** | Conformidade LGPD (12 itens verificados) | Checklist + plano de ação: [`LEGAL_COMPLIANCE.md`](./LEGAL_COMPLIANCE.md) | ✅ |
+
+**Resumo:** sistema já em conformidade em segurança (SecureStore, bcrypt, HTTPS, rate limit, RBAC, sem segredos no git). Ações pendentes são documentais/organizacionais (termo de assinatura, aviso de privacidade, encarregado, retenção) — sem mudança obrigatória de código.
 
 ### FASE 4 — 📢 MARKETING (4) ⏳
 
@@ -128,6 +130,21 @@
 ---
 
 ## 📝 Relatórios por Fase
+
+### ✅ FASE 3 — JURÍDICA (concluída em 2026-08-10)
+
+**Entregáveis criados (4 documentos):**
+
+| # | Agente | Entregável | Arquivo |
+|---|--------|-----------|---------|
+| 15 | CLOGPT | Parecer de exposição jurídica (risco baixo-médio) | [`doc/LEGAL_PARECER.md`](./LEGAL_PARECER.md) |
+| 16 | LGPDGPT | Mapa de dados, retenção e direitos do titular | [`doc/LEGAL_LGPD.md`](./LEGAL_LGPD.md) |
+| 17 | ContractGPT | Minutas: aviso de privacidade + termo de assinatura digital + cláusula contratual | [`doc/LEGAL_CONSENTIMENTO.md`](./LEGAL_CONSENTIMENTO.md) |
+| 18 | ComplianceGPT | Checklist LGPD (12 itens) + plano de ação | [`doc/LEGAL_COMPLIANCE.md`](./LEGAL_COMPLIANCE.md) |
+
+**Validação real:** dados pessoais conferidos no `prisma/schema.prisma` (Cliente com CPF/endereço/coordenadas; assinaturas e fotos em Orcamento). Segurança já conforme (SecureStore, bcrypt, HTTPS, rate limit, RBAC). Ações pendentes são documentais — sem mudança obrigatória de código.
+
+---
 
 ### ✅ FASE 2 — DOCUMENTAÇÃO (concluída em 2026-08-10)
 
