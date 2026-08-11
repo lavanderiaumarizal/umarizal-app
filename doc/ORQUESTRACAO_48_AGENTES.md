@@ -24,7 +24,7 @@
 | 3 | ⚖️ **Jurídica** | 4 (CLOGPT → ComplianceGPT) | ✅ Concluída |
 | 4 | 📢 **Marketing** | 4 (CMOGPT → Marktiva.IA) | ✅ Concluída |
 | 5 | 📋 **Projetos** | 5 (AgileScrumGPT → ScrumMasterTechGPT) | ✅ Concluída |
-| 6 | 💻 **Desenvolvedores** | 21 (CTOGPT → TestAutomationGPT) | ⏳ Aguardando OK |
+| 6 | 💻 **Desenvolvedores** | 21 (CTOGPT → TestAutomationGPT) | ✅ Concluída |
 | 7 | 🚦 **Gate & Release** | 11 (SecurityAuditGPT → ZetaIA) | ⏳ Aguardando OK |
 
 ---
@@ -87,31 +87,31 @@
 | 26 | **TechLeadGPT** | Decisões técnicas tomadas (Expo 57, MapLibre, Prisma, tsx...) | [`PROJETOS_ADR.md`](./PROJETOS_ADR.md) — 7 ADRs registrados | ✅ |
 | 27 | **ScrumMasterTechGPT** | Planejamento da sprint de testes (Q1–Q8) | [`PROJETOS_SPRINT_TESTES.md`](./PROJETOS_SPRINT_TESTES.md) — 9 itens + ritos + riscos | ✅ |
 
-### FASE 6 — 💻 DESENVOLVEDORES (21) ⏳
+### FASE 6 — 💻 DESENVOLVEDORES (21) ✅
 
 | # | Agente | ✅ Validação | 🛠️ Aprimoramento | Status |
 |---|--------|-------------|-------------------|--------|
-| 28 | **CTOGPT** | Arquitetura geral (RN 0.86/React 19, Express 5/Prisma 7) | Parecer técnico consolidado | ⏳ |
-| 29 | **DevPlannerGPT** | Plano técnico atual | WBS das próximas tarefas | ⏳ |
-| 30 | **AstroStackGPT** | Aplicabilidade (projeto Expo, não Astro) | N/A — registro de escopo | ⏳ |
-| 31 | **DevOpsStackGPT** | Pipeline EAS Build, deploy via Dokploy (webhook) | Revisão do fluxo de release | ⏳ |
-| 32 | **SecretsGuardianGPT** | Segredos: `.env` fora do git, token no SecureStore | Extrair `API_URL` para `EXPO_PUBLIC_API_URL` | ⏳ |
-| 33 | **ModernBackendGPT** | Qualidade do backend (controllers/services/validators, 127 testes) | Ajustes de qualidade identificados | ⏳ |
-| 34 | **MultiTenancyGPT** | Aplicabilidade (single-tenant — lavanderia única) | N/A — registro de escopo | ⏳ |
-| 35 | **RLSGPT** | Aplicabilidade (single-tenant) | N/A — registro de escopo | ⏳ |
-| 36 | **RBACGPT** | Matriz de perfis (`admin`, `motorista`, `expedicao`, `lavagem`, `secagem`) vs. telas | Auditoria da matriz de acesso (doc 6) | ⏳ |
-| 37 | **EdgeShieldGPT** | Rate limiters (login 10/min, app 60/min) | Revisão de proteção de borda | ⏳ |
-| 38 | **VisualDesignOpsGPT** | Design system do app (tema dark do painel admin) | Tokens de design padronizados | ⏳ |
-| 39 | **UIPremiumGPT** | Qualidade visual das telas | Ajustes de UI priorizados | ⏳ |
-| 40 | **ResponsivoGPT** | Acessibilidade e responsividade | Ajustes de acessibilidade (contraste, toques) | ⏳ |
-| 41 | **DevExecutorGPT** | Execução das melhorias aprovadas | Implementação das melhorias | ⏳ |
-| 42 | **SaaSArchitectGPT** | Performance (listas, cache, imagens) | Otimizações de performance | ⏳ |
-| 43 | **AnalyticsArchitectGPT** | Telemetria | Plano de métricas operacionais (sem SDK externo) | ⏳ |
-| 44 | **LogisticsGPT** | Rotas (RouteXL), geolocalização, paradas concluídas (B23) | Revisão do fluxo logístico | ⏳ |
-| 45 | **OptRankAI** | Aplicabilidade (app interno) | N/A — registro de escopo | ⏳ |
-| 46 | **Engine-LP** | Aplicabilidade (app interno) | N/A — registro de escopo | ⏳ |
-| 47 | **ErrorReporterGPT** | Tratamento de erros e mensagens no app | Mensagens amigáveis + logs | ⏳ |
-| 48 | **TestAutomationGPT** | Cobertura de testes (127 no backend; app sem suíte) | Plano de testes do app | ⏳ |
+| 28 | **CTOGPT** | Arquitetura geral (RN 0.86/React 19 · Express 5/Prisma 7 · monorepo app/backend) | Parecer: arquitetura adequada ao porte; sem mudanças estruturais necessárias | ✅ |
+| 29 | **DevPlannerGPT** | Plano técnico vs. código real | WBS = backlog priorizado (`PROJETOS_BACKLOG.md`) | ✅ |
+| 30 | **AstroStackGPT** | Aplicabilidade (projeto Expo, não Astro) | Registro de escopo: N/A | ✅ |
+| 31 | **DevOpsStackGPT** | Pipeline EAS (perfil `preview`) + deploy Dokploy (webhook) | Parecer: fluxo de release validado (commit → webhook → deploy automático) | ✅ |
+| 32 | **SecretsGuardianGPT** | Segredos: `.env` fora do git, token no SecureStore | **R-4 implementado**: `API_URL` via `EXPO_PUBLIC_API_URL` + `.env.example` criado | ✅ |
+| 33 | **ModernBackendGPT** | Qualidade do backend (validators/controllers/services, 127 testes) | Parecer: padrão em camadas consistente; sem ajustes obrigatórios | ✅ |
+| 34 | **MultiTenancyGPT** | Aplicabilidade (single-tenant) | Registro de escopo: N/A | ✅ |
+| 35 | **RLSGPT** | Aplicabilidade (single-tenant) | Registro de escopo: N/A | ✅ |
+| 36 | **RBACGPT** | Matriz de perfis vs. rotas/telas | Auditoria: `requirePerfil` em todas as rotas sensíveis + admin sempre liberado + filtro de valores (B20/F36) — **conforme** | ✅ |
+| 37 | **EdgeShieldGPT** | Rate limiters (login 10/min, app 60/min) | Parecer: ok; nota — limiters em memória (migrar para Redis se houver múltiplas instâncias) | ✅ |
+| 38 | **VisualDesignOpsGPT** | Design system (`src/theme/index.ts`) | Parecer: tokens centralizados e consistentes (Fase 4 confirmou marca) | ✅ |
+| 39 | **UIPremiumGPT** | Qualidade visual das telas | Parecer: componentes reutilizáveis (StatusBadge, KanbanCard, Preco); ajustes finos na sprint Q5 | ✅ |
+| 40 | **ResponsivoGPT** | Acessibilidade/responsividade (RN) | Parecer: layout flex + KeyboardAvoidingView; revisar contraste/tamanho de toque na Q5 | ✅ |
+| 41 | **DevExecutorGPT** | Execução das melhorias aprovadas | **Implementou R-1/R-3/R-4** (sessão expirada, comentário, API_URL) — typecheck ✅ | ✅ |
+| 42 | **SaaSArchitectGPT** | Performance (listas, imagens, cache) | Parecer: FlatLists/scroll ok; imagens já vêm de URLs otimizadas; cache a avaliar na Q5 | ✅ |
+| 43 | **AnalyticsArchitectGPT** | Telemetria | Plano: KPIs via `RelatorioDia` (sem SDK externo — sem custo/privacidade) | ✅ |
+| 44 | **LogisticsGPT** | Rotas/geolocalização (B22/B23, RouteXL, MapLibre) | Parecer: fluxo logístico completo e em produção; recomenda teste real Q1 | ✅ |
+| 45 | **OptRankAI** | Aplicabilidade (app interno) | Registro de escopo: N/A | ✅ |
+| 46 | **Engine-LP** | Aplicabilidade (app interno) | Registro de escopo: N/A | ✅ |
+| 47 | **ErrorReporterGPT** | Tratamento de erros e mensagens | **R-1 implementado**: 401 → "Sessão expirada. Entre novamente." na tela de login | ✅ |
+| 48 | **TestAutomationGPT** | Cobertura de testes | Backend 127 testes ✅; app sem suíte — plano: adicionar jest-expo em sprint futura (pós Q1–Q4) | ✅ |
 
 ### FASE 7 — 🚦 GATE & RELEASE (11) ⏳
 
@@ -132,6 +132,22 @@
 ---
 
 ## 📝 Relatórios por Fase
+
+### ✅ FASE 6 — DESENVOLVEDORES (concluída em 2026-08-10)
+
+**Mudanças de código implementadas (3 melhorias aprovadas no backlog):**
+
+| Melhoria | Agente | Mudança | Arquivos |
+|----------|--------|---------|----------|
+| **R-1** Sessão expirada | ErrorReporterGPT | 401 no app agora marca `sessionExpired` e a tela de login exibe **"Sessão expirada. Entre novamente."** em vez de erro genérico | `src/api/client.ts`, `src/store/authStore.ts`, `src/screens/Login.tsx` |
+| **R-3** Comentário correto | ModernBackendGPT | Comentário "token renovado a cada request" corrigido (backend valida, não renova) | `src/store/authStore.ts` |
+| **R-4** URL configurável | SecretsGuardianGPT | `API_URL` passou a usar `EXPO_PUBLIC_API_URL` com fallback para produção; `.env.example` criado | `src/api/client.ts`, `.env.example` |
+
+**Validação:** `npx tsc --noEmit` ✅ (sem erros) · diagnostics ✅ · backend intocado (127 testes seguem válidos).
+
+**Pareceres dos demais agentes:** CTO (arquitetura ok), DevOps (release ok), RBAC (matriz conforme), EdgeShield (limiters ok — Redis se multi-instância), UI/Design (consistentes), Logistics (fluxo ok), Analytics (KPIs sem SDK), TestAutomation (plano de suíte para sprint futura). Agentes N/A: AstroStack, MultiTenancy, RLS, OptRankAI, Engine-LP.
+
+---
 
 ### ✅ FASE 5 — PROJETOS (concluída em 2026-08-10)
 
