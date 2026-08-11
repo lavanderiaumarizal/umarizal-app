@@ -36,6 +36,11 @@
 | 27 | [`SPRINT1_B5_DETALHAMENTO.md`](./SPRINT1_B5_DETALHAMENTO.md) | Detalhamento | Endpoint iniciar etapa + admin com perfisApp | ✅ |
 | 28 | [`SPRINT1_B6_DETALHAMENTO.md`](./SPRINT1_B6_DETALHAMENTO.md) | Detalhamento | Endpoint concluir etapa + sincronização de fases | ✅ |
 | 29 | [`Pesquisa-umarizal.app.md`](./Pesquisa-umarizal.app.md) | Pesquisa | Pesquisa complementar (documentação histórica) | ✅ |
+| 30 | [`PROJETOS_RETROSPECTIVA.md`](./PROJETOS_RETROSPECTIVA.md) | Projetos | Retrospectiva das sprints + priorização (AgileScrumGPT) | ✅ |
+| 31 | [`PROJETOS_BACKLOG.md`](./PROJETOS_BACKLOG.md) | Projetos | Backlog priorizado P0–P3 (ProductOwnerGPT) | ✅ |
+| 32 | [`PROJETOS_CATALOGO.md`](./PROJETOS_CATALOGO.md) | Projetos | Catálogo de módulos + flags (FeatureCatalogGPT) | ✅ |
+| 33 | [`PROJETOS_ADR.md`](./PROJETOS_ADR.md) | Projetos | ADRs das decisões técnicas (TechLeadGPT) | ✅ |
+| 34 | [`PROJETOS_SPRINT_TESTES.md`](./PROJETOS_SPRINT_TESTES.md) | Projetos | Plano da sprint de testes Q1–Q8 (ScrumMasterTechGPT) | ✅ |
 
 ## 🔗 Documentos de outros repositórios
 

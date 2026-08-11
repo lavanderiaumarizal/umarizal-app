@@ -32,3 +32,8 @@ Substitui a planilha manual de controle de entrada/saída de tapetes e gerencia 
 | — | [`LEGAL_COMPLIANCE.md`](./LEGAL_COMPLIANCE.md) | Checklist de conformidade LGPD |
 | — | [`MARKETING_MARCA.md`](./MARKETING_MARCA.md) | Guia de identidade visual |
 | — | [`MARKETING_JORNADA.md`](./MARKETING_JORNADA.md) | Mapa de jornadas por perfil |
+| — | [`PROJETOS_RETROSPECTIVA.md`](./PROJETOS_RETROSPECTIVA.md) | Retrospectiva e priorização |
+| — | [`PROJETOS_BACKLOG.md`](./PROJETOS_BACKLOG.md) | Backlog priorizado |
+| — | [`PROJETOS_CATALOGO.md`](./PROJETOS_CATALOGO.md) | Catálogo de módulos e flags |
+| — | [`PROJETOS_ADR.md`](./PROJETOS_ADR.md) | Decisões de arquitetura |
+| — | [`PROJETOS_SPRINT_TESTES.md`](./PROJETOS_SPRINT_TESTES.md) | Plano da sprint de testes |

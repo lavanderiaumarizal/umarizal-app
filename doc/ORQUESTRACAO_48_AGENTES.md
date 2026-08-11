@@ -23,7 +23,7 @@
 | 2 | 📝 **Documentação** | 8 (SOCGPT → RepoCreditsAdderGPT) | ✅ Concluída |
 | 3 | ⚖️ **Jurídica** | 4 (CLOGPT → ComplianceGPT) | ✅ Concluída |
 | 4 | 📢 **Marketing** | 4 (CMOGPT → Marktiva.IA) | ✅ Concluída |
-| 5 | 📋 **Projetos** | 5 (AgileScrumGPT → ScrumMasterTechGPT) | ⏳ Aguardando OK |
+| 5 | 📋 **Projetos** | 5 (AgileScrumGPT → ScrumMasterTechGPT) | ✅ Concluída |
 | 6 | 💻 **Desenvolvedores** | 21 (CTOGPT → TestAutomationGPT) | ⏳ Aguardando OK |
 | 7 | 🚦 **Gate & Release** | 11 (SecurityAuditGPT → ZetaIA) | ⏳ Aguardando OK |
 
@@ -77,15 +77,15 @@
 
 **Conclusão:** identidade visual aprovada (sem divergências). Jornadas mapeadas servem como roteiro dos testes Q1–Q4.
 
-### FASE 5 — 📋 PROJETOS (5) ⏳
+### FASE 5 — 📋 PROJETOS (5) ✅
 
 | # | Agente | ✅ Validação | 🛠️ Aprimoramento | Status |
 |---|--------|-------------|-------------------|--------|
-| 23 | **AgileScrumGPT** | Ritual de entregas das sprints B/F/Q | Retrospectiva da Sprint 1–5 + priorização Q1–Q8 | ⏳ |
-| 24 | **ProductOwnerGPT** | Backlog real (Q1–Q8, F30.1) | Backlog refinado e priorizado | ⏳ |
-| 25 | **FeatureCatalogGPT** | Catálogo de módulos do app | Catálogo de features + flags (ex.: F30.1 push) | ⏳ |
-| 26 | **TechLeadGPT** | Decisões de arquitetura (Expo SDK 57, MapLibre, Prisma) | ADRs das decisões técnicas | ⏳ |
-| 27 | **ScrumMasterTechGPT** | Planejamento das próximas sprints | Plano de sprint Q1–Q8 | ⏳ |
+| 23 | **AgileScrumGPT** | Retrospectiva das sprints B/F (54 commits, decisões, problemas) | [`PROJETOS_RETROSPECTIVA.md`](./PROJETOS_RETROSPECTIVA.md) — aprendizados + priorização Q1–Q8 | ✅ |
+| 24 | **ProductOwnerGPT** | Backlog real (Q1–Q8, achados das Fases 1–4) | [`PROJETOS_BACKLOG.md`](./PROJETOS_BACKLOG.md) — 17 itens priorizados P0–P3 + DoR/DoD | ✅ |
+| 25 | **FeatureCatalogGPT** | Catálogo de módulos vs. telas/endpoints reais | [`PROJETOS_CATALOGO.md`](./PROJETOS_CATALOGO.md) — 13 módulos + 4 feature flags | ✅ |
+| 26 | **TechLeadGPT** | Decisões técnicas tomadas (Expo 57, MapLibre, Prisma, tsx...) | [`PROJETOS_ADR.md`](./PROJETOS_ADR.md) — 7 ADRs registrados | ✅ |
+| 27 | **ScrumMasterTechGPT** | Planejamento da sprint de testes (Q1–Q8) | [`PROJETOS_SPRINT_TESTES.md`](./PROJETOS_SPRINT_TESTES.md) — 9 itens + ritos + riscos | ✅ |
 
 ### FASE 6 — 💻 DESENVOLVEDORES (21) ⏳
 
@@ -132,6 +132,22 @@
 ---
 
 ## 📝 Relatórios por Fase
+
+### ✅ FASE 5 — PROJETOS (concluída em 2026-08-10)
+
+**Entregáveis criados (5 documentos):**
+
+| # | Agente | Entregável | Arquivo |
+|---|--------|-----------|---------|
+| 23 | AgileScrumGPT | Retrospectiva + priorização Q1–Q8 | [`doc/PROJETOS_RETROSPECTIVA.md`](./PROJETOS_RETROSPECTIVA.md) |
+| 24 | ProductOwnerGPT | Backlog priorizado (P0–P3) + DoR/DoD | [`doc/PROJETOS_BACKLOG.md`](./PROJETOS_BACKLOG.md) |
+| 25 | FeatureCatalogGPT | Catálogo de 13 módulos + feature flags | [`doc/PROJETOS_CATALOGO.md`](./PROJETOS_CATALOGO.md) |
+| 26 | TechLeadGPT | 7 ADRs de decisões técnicas | [`doc/PROJETOS_ADR.md`](./PROJETOS_ADR.md) |
+| 27 | ScrumMasterTechGPT | Plano da sprint de testes Q1–Q8 | [`doc/PROJETOS_SPRINT_TESTES.md`](./PROJETOS_SPRINT_TESTES.md) |
+
+**Validação real:** catálogo e ADRs conferidos com telas (`src/screens`, `src/components`), endpoints (`backend/src/routes`) e histórico de commits (54). Backlog integra os achados das Fases 1–4 (R-1 a R-4, compliance LGPD).
+
+---
 
 ### ✅ FASE 4 — MARKETING (concluída em 2026-08-10)
 
