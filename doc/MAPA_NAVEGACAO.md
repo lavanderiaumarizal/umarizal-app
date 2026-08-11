@@ -33,8 +33,20 @@ graph TD
     UML[DIAGRAMAS.md] --> DOC1
     UML --> DOC4
 
+    LEGAL1[LEGAL_PARECER.md] --> LEGAL2[LEGAL_LGPD.md]
+    LEGAL2 --> LEGAL3[LEGAL_CONSENTIMENTO.md]
+    LEGAL3 --> LEGAL4[LEGAL_COMPLIANCE.md]
+
+    MKT1[MARKETING_MARCA.md] --> MKT2[MARKETING_JORNADA.md]
+    MKT2 --> SPRINT[PROJETOS_SPRINT_TESTES.md]
+
+    RETRO[PROJETOS_RETROSPECTIVA.md] --> BACKLOG[PROJETOS_BACKLOG.md]
+    BACKLOG --> CAT[PROJETOS_CATALOGO.md]
+    CAT --> ADR[PROJETOS_ADR.md]
+
     INDICE[INDICE_DOCUMENTACAO.md] -.-> README
     MAPA[MAPA_NAVEGACAO.md] -.-> INDICE
+    ORQ -.-> INDICE
 ```
 
 ## 🧭 Como navegar
@@ -47,7 +59,9 @@ graph TD
 | Ver as telas por perfil | `3_TELAS.md` |
 | Entender permissões e privacidade | `6_PERFIS_ACESSO.md` |
 | Ver o histórico de versões | `CHANGELOG.md` |
+| Questões jurídicas/LGPD | `LEGAL_PARECER.md` → `LEGAL_COMPLIANCE.md` |
 | Acompanhar a validação dos 48 agentes | `ORQUESTRACAO_48_AGENTES.md` |
+| Planejar os testes com a equipe | `PROJETOS_SPRINT_TESTES.md` |
 
 ## 🔁 Manutenção do grafo
 

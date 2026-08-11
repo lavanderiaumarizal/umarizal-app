@@ -4,6 +4,19 @@
 > **Formato:** baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/)
 > **Nota:** tarefas de backend (B1–B23) são versionadas no repositório `backend/`
 
+## [1.1.0] — 2026-08-10 · Melhorias da orquestração dos 48 agentes
+
+### ✨ Adicionado
+- `.env.example` com `EXPO_PUBLIC_API_URL` — URL da API configurável (R-4, SecretsGuardianGPT)
+- 13 documentos de validação/orquestração (Fases 1–7: gestão, documentação, jurídica, marketing, projetos, desenvolvedores)
+
+### 🐛 Correções
+- **401 com mensagem clara**: sessão expirada agora exibe "Sessão expirada. Entre novamente." na tela de login (R-1, ErrorReporterGPT)
+- Comentário do `authStore` corrigido: o backend **valida** o token a cada request (não renova) (R-3, ModernBackendGPT)
+
+### 🧪 Qualidade
+- Regressão final: backend **126/126 testes** ✅ · app `tsc --noEmit` ✅
+
 ## [1.0.0] — 2026-08-10 · APK v4 homologado
 
 ### 🐛 Correções
