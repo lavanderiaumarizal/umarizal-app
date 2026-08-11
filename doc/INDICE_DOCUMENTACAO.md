@@ -41,6 +41,7 @@
 | 32 | [`PROJETOS_CATALOGO.md`](./PROJETOS_CATALOGO.md) | Projetos | Catálogo de módulos + flags (FeatureCatalogGPT) | ✅ |
 | 33 | [`PROJETOS_ADR.md`](./PROJETOS_ADR.md) | Projetos | ADRs das decisões técnicas (TechLeadGPT) | ✅ |
 | 34 | [`PROJETOS_SPRINT_TESTES.md`](./PROJETOS_SPRINT_TESTES.md) | Projetos | Plano da sprint de testes Q1–Q8 (ScrumMasterTechGPT) | ✅ |
+| 35 | [`Q1_TESTE_MOTORISTA.md`](./Q1_TESTE_MOTORISTA.md) | Testes | Guia passo a passo do teste com o motorista | ✅ |
 
 ## 🔗 Documentos de outros repositórios
 
