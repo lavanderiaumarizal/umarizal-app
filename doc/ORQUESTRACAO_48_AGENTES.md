@@ -22,7 +22,7 @@
 | 1 | 🏢 **Gestão** | 6 (CEOGPT → SecurityAuditGPT) | ✅ Concluída |
 | 2 | 📝 **Documentação** | 8 (SOCGPT → RepoCreditsAdderGPT) | ✅ Concluída |
 | 3 | ⚖️ **Jurídica** | 4 (CLOGPT → ComplianceGPT) | ✅ Concluída |
-| 4 | 📢 **Marketing** | 4 (CMOGPT → Marktiva.IA) | ⏳ Aguardando OK |
+| 4 | 📢 **Marketing** | 4 (CMOGPT → Marktiva.IA) | ✅ Concluída |
 | 5 | 📋 **Projetos** | 5 (AgileScrumGPT → ScrumMasterTechGPT) | ⏳ Aguardando OK |
 | 6 | 💻 **Desenvolvedores** | 21 (CTOGPT → TestAutomationGPT) | ⏳ Aguardando OK |
 | 7 | 🚦 **Gate & Release** | 11 (SecurityAuditGPT → ZetaIA) | ⏳ Aguardando OK |
@@ -66,14 +66,16 @@
 
 **Resumo:** sistema já em conformidade em segurança (SecureStore, bcrypt, HTTPS, rate limit, RBAC, sem segredos no git). Ações pendentes são documentais/organizacionais (termo de assinatura, aviso de privacidade, encarregado, retenção) — sem mudança obrigatória de código.
 
-### FASE 4 — 📢 MARKETING (4) ⏳
+### FASE 4 — 📢 MARKETING (4) ✅
 
 | # | Agente | ✅ Validação | 🛠️ Aprimoramento | Status |
 |---|--------|-------------|-------------------|--------|
-| 19 | **CMOGPT** | Consistência da marca no app (cores, identidade) | Guia de identidade visual no app | ⏳ |
-| 20 | **StratFlowIA** | Jornada do usuário (colaborador) no app | Mapa da jornada por perfil | ⏳ |
-| 21 | **VendedorIA** | Aplicabilidade: app interno (sem vendas) | N/A — registro de escopo | ⏳ |
-| 22 | **Marktiva.IA** | Aplicabilidade: app interno | N/A — registro de escopo | ⏳ |
+| 19 | **CMOGPT** | Consistência da marca no app (cores em `src/theme/index.ts` vs. site oficial) | Guia de identidade: [`MARKETING_MARCA.md`](./MARKETING_MARCA.md) — cores ✅ consistentes (azul #0a2640, rosa, lima, dourado) | ✅ |
+| 20 | **StratFlowIA** | Jornada dos colaboradores por perfil (motorista, expedição, lavagem, secagem, admin) | Mapa de jornadas: [`MARKETING_JORNADA.md`](./MARKETING_JORNADA.md) — orienta os testes Q1–Q4 | ✅ |
+| 21 | **VendedorIA** | Aplicabilidade: app interno de logística, **sem vendas** | Registro de escopo: N/A — nenhuma ação | ✅ |
+| 22 | **Marktiva.IA** | Aplicabilidade: app interno, sem campanhas externas | Registro de escopo: N/A — nenhuma ação | ✅ |
+
+**Conclusão:** identidade visual aprovada (sem divergências). Jornadas mapeadas servem como roteiro dos testes Q1–Q4.
 
 ### FASE 5 — 📋 PROJETOS (5) ⏳
 
@@ -130,6 +132,21 @@
 ---
 
 ## 📝 Relatórios por Fase
+
+### ✅ FASE 4 — MARKETING (concluída em 2026-08-10)
+
+**Entregáveis criados (2 documentos + 2 registros de escopo N/A):**
+
+| # | Agente | Entregável | Arquivo |
+|---|--------|-----------|---------|
+| 19 | CMOGPT | Guia de identidade visual (validação de marca) | [`doc/MARKETING_MARCA.md`](./MARKETING_MARCA.md) |
+| 20 | StratFlowIA | Mapa de jornadas dos colaboradores por perfil | [`doc/MARKETING_JORNADA.md`](./MARKETING_JORNADA.md) |
+| 21 | VendedorIA | Registro de escopo: N/A (app interno sem vendas) | — |
+| 22 | Marktiva.IA | Registro de escopo: N/A (sem campanhas externas) | — |
+
+**Validação real:** cores do app conferidas em `src/theme/index.ts` contra a identidade do site (azul/rosa/lima/dourado) — **consistente**. Jornadas mapeadas a partir das telas reais (`RotaDoDia`, `Documentacao`, `Producao`, `Almoxarifado`, `RelatorioDia`).
+
+---
 
 ### ✅ FASE 3 — JURÍDICA (concluída em 2026-08-10)
 

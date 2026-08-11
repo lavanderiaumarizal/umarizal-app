@@ -26,14 +26,16 @@
 | 17 | [`LEGAL_LGPD.md`](./LEGAL_LGPD.md) | Jurídico | Mapa de dados, retenção e direitos (LGPDGPT) | ✅ |
 | 18 | [`LEGAL_CONSENTIMENTO.md`](./LEGAL_CONSENTIMENTO.md) | Jurídico | Aviso de privacidade + termo de assinatura (ContractGPT) | ✅ |
 | 19 | [`LEGAL_COMPLIANCE.md`](./LEGAL_COMPLIANCE.md) | Jurídico | Checklist LGPD + plano de ação (ComplianceGPT) | ✅ |
-| 16 | [`SPRINT1_B1_DETALHAMENTO.md`](./SPRINT1_B1_DETALHAMENTO.md) | Detalhamento | Tabela `etapas_producao` | ✅ |
-| 17 | [`SPRINT1_B2_DETALHAMENTO.md`](./SPRINT1_B2_DETALHAMENTO.md) | Detalhamento | Tabela `carregamento_veiculo` | ✅ |
-| 18 | [`SPRINT1_B3_DETALHAMENTO.md`](./SPRINT1_B3_DETALHAMENTO.md) | Detalhamento | Multi-perfil (`perfisApp`) | ✅ |
-| 19 | [`SPRINT1_B3_1_DETALHAMENTO.md`](./SPRINT1_B3_1_DETALHAMENTO.md) | Detalhamento | Endpoint `PATCH /api/usuarios/:id/perfis` | ✅ |
-| 20 | [`SPRINT1_B4_DETALHAMENTO.md`](./SPRINT1_B4_DETALHAMENTO.md) | Detalhamento | Login com `rememberMe` e `transportadorId` | ✅ |
-| 21 | [`SPRINT1_B5_DETALHAMENTO.md`](./SPRINT1_B5_DETALHAMENTO.md) | Detalhamento | Endpoint iniciar etapa + admin com perfisApp | ✅ |
-| 22 | [`SPRINT1_B6_DETALHAMENTO.md`](./SPRINT1_B6_DETALHAMENTO.md) | Detalhamento | Endpoint concluir etapa + sincronização de fases | ✅ |
-| 23 | [`Pesquisa-umarizal.app.md`](./Pesquisa-umarizal.app.md) | Pesquisa | Pesquisa complementar (documentação histórica) | ✅ |
+| 20 | [`MARKETING_MARCA.md`](./MARKETING_MARCA.md) | Marketing | Guia de identidade visual (CMOGPT) | ✅ |
+| 21 | [`MARKETING_JORNADA.md`](./MARKETING_JORNADA.md) | Marketing | Mapa de jornadas por perfil (StratFlowIA) | ✅ |
+| 22 | [`SPRINT1_B1_DETALHAMENTO.md`](./SPRINT1_B1_DETALHAMENTO.md) | Detalhamento | Tabela `etapas_producao` | ✅ |
+| 23 | [`SPRINT1_B2_DETALHAMENTO.md`](./SPRINT1_B2_DETALHAMENTO.md) | Detalhamento | Tabela `carregamento_veiculo` | ✅ |
+| 24 | [`SPRINT1_B3_DETALHAMENTO.md`](./SPRINT1_B3_DETALHAMENTO.md) | Detalhamento | Multi-perfil (`perfisApp`) | ✅ |
+| 25 | [`SPRINT1_B3_1_DETALHAMENTO.md`](./SPRINT1_B3_1_DETALHAMENTO.md) | Detalhamento | Endpoint `PATCH /api/usuarios/:id/perfis` | ✅ |
+| 26 | [`SPRINT1_B4_DETALHAMENTO.md`](./SPRINT1_B4_DETALHAMENTO.md) | Detalhamento | Login com `rememberMe` e `transportadorId` | ✅ |
+| 27 | [`SPRINT1_B5_DETALHAMENTO.md`](./SPRINT1_B5_DETALHAMENTO.md) | Detalhamento | Endpoint iniciar etapa + admin com perfisApp | ✅ |
+| 28 | [`SPRINT1_B6_DETALHAMENTO.md`](./SPRINT1_B6_DETALHAMENTO.md) | Detalhamento | Endpoint concluir etapa + sincronização de fases | ✅ |
+| 29 | [`Pesquisa-umarizal.app.md`](./Pesquisa-umarizal.app.md) | Pesquisa | Pesquisa complementar (documentação histórica) | ✅ |
 
 ## 🔗 Documentos de outros repositórios
 

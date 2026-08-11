@@ -30,3 +30,5 @@ Substitui a planilha manual de controle de entrada/saída de tapetes e gerencia 
 | — | [`LEGAL_LGPD.md`](./LEGAL_LGPD.md) | LGPD: mapa de dados e retenção |
 | — | [`LEGAL_CONSENTIMENTO.md`](./LEGAL_CONSENTIMENTO.md) | Aviso de privacidade + termo de assinatura |
 | — | [`LEGAL_COMPLIANCE.md`](./LEGAL_COMPLIANCE.md) | Checklist de conformidade LGPD |
+| — | [`MARKETING_MARCA.md`](./MARKETING_MARCA.md) | Guia de identidade visual |
+| — | [`MARKETING_JORNADA.md`](./MARKETING_JORNADA.md) | Mapa de jornadas por perfil |
