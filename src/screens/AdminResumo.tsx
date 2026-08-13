@@ -28,7 +28,8 @@ function fmtMoeda(v?: number): string {
 
 function fmtPct(v?: number): string {
   if (v === undefined || v === null) return '—';
-  return `${Math.round(v * 100)}%`;
+  // taxaConversao do backend já vem em percentual (ex.: 66.25)
+  return v > 1 ? `${Math.round(v)}%` : `${Math.round(v * 100)}%`;
 }
 
 export default function AdminResumoScreen() {
@@ -132,7 +133,7 @@ export default function AdminResumoScreen() {
       </View>
       <View style={styles.cardLinha}>
         <Text style={styles.linhaLabel}>Faturamento (ativos)</Text>
-        <Text style={styles.linhaValor}>{fmtMoeda(stats.faturamento)}</Text>
+        <Text style={styles.linhaValor}>{fmtMoeda(stats.faturamento?._sum?.valorTotal)}</Text>
       </View>
       <View style={styles.cardLinha}>
         <Text style={styles.linhaLabel}>Ticket médio</Text>

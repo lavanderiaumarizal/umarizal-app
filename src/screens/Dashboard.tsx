@@ -48,6 +48,13 @@ function fmtDiaSemana(iso: string): string {
   return d.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '');
 }
 
+/** Rótulo do fator de secagem (mesma lógica da página da estufa do painel) */
+function fatorSecagemLabel(f?: 'bom' | 'regular' | 'ruim'): string {
+  if (f === 'bom') return '☀️ Bom para secagem';
+  if (f === 'regular') return '⛅ Regular para secagem';
+  return '🌧️ Ruim para secagem (chuva)';
+}
+
 interface CardDef {
   icon: string;
   title: string;
@@ -246,10 +253,11 @@ export default function DashboardScreen() {
             <Text style={styles.tempoIcone}>{previsao[0].icone}</Text>
             <View style={styles.tempoInfo}>
               <Text style={styles.tempoMaxMin}>
-                {previsao[0].temperaturaMax ?? '—'}° máx · {previsao[0].temperaturaMin ?? '—'}° mín
+                {fatorSecagemLabel(previsao[0].fatorSecagem)}
               </Text>
               <Text style={styles.tempoDetalhe}>
-                🌧 {previsao[0].probabilidadeChuva ?? 0}% · 💧 {previsao[0].umidadeMax ?? '—'}% · 💨{' '}
+                Máx {previsao[0].temperaturaMax ?? '—'}° · Mín {previsao[0].temperaturaMin ?? '—'}° · Chuva{' '}
+                {previsao[0].chuvaTotal ?? 0} mm · 💧 {previsao[0].umidadeMax ?? '—'}% · 💨{' '}
                 {previsao[0].ventoMax ?? '—'} km/h
               </Text>
             </View>
@@ -260,7 +268,7 @@ export default function DashboardScreen() {
                 <Text style={styles.tempoDiaLabel}>{i === 0 ? 'Hoje' : fmtDiaSemana(d.data)}</Text>
                 <Text style={styles.tempoDiaIcone}>{d.icone}</Text>
                 <Text style={styles.tempoDiaTemp}>{d.temperaturaMax ?? '—'}°</Text>
-                <Text style={styles.tempoDiaChuva}>🌧 {d.probabilidadeChuva ?? 0}%</Text>
+                <Text style={styles.tempoDiaChuva}>🌧 {d.chuvaTotal ?? 0}mm</Text>
               </View>
             ))}
           </ScrollView>

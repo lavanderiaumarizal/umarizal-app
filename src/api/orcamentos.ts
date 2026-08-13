@@ -211,7 +211,7 @@ export interface DashboardStats {
   recusados: number;
   totalClientes: number;
   faturamentoTotal: number;
-  faturamento: number;
+  faturamento: { _sum: { valorTotal: number } } | null;
   totalAprovados: number;
   taxaConversao: number;
   ticketMedio: number;

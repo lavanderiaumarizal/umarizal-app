@@ -161,6 +161,19 @@ export default function RelatorioDiaScreen() {
         </View>
       </View>
 
+      {/* Agendadas para o dia (issue 3 — o relatório nunca fica vazio) */}
+      <View style={styles.agendadasBox}>
+        <Text style={styles.agendadasText}>
+          📅 Agendadas para hoje: {relatorio.coletasAgendadas ?? 0} coletas ·{' '}
+          {relatorio.entregasAgendadas ?? 0} entregas
+        </Text>
+        {relatorio.totalColetas === 0 && relatorio.totalEntregas === 0 && (
+          <Text style={styles.agendadasHint}>
+            Os números de "realizadas" aparecem quando coletas/entregas forem concluídas.
+          </Text>
+        )}
+      </View>
+
       {/* Por tipo de serviço */}
       <Text style={styles.secao}>🧺 Por tipo de serviço</Text>
       <View style={styles.card}>
@@ -240,6 +253,16 @@ const styles = StyleSheet.create({
   cardValue: { color: colors.text, fontSize: 26, fontWeight: 'bold' },
   cardLabel: { color: colors.textSecondary, fontSize: 13, marginTop: 2 },
   cardValor: { color: colors.brandGold, fontSize: 13, fontWeight: 'bold', marginTop: 4 },
+  agendadasBox: {
+    backgroundColor: colors.activeBg,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    borderRadius: 10,
+    padding: 12,
+    marginTop: 12,
+  },
+  agendadasText: { color: colors.active, fontSize: 13, fontWeight: 'bold' },
+  agendadasHint: { color: colors.textMuted, fontSize: 11, marginTop: 4 },
   secao: { color: colors.text, fontSize: 15, fontWeight: 'bold', marginTop: 20, marginBottom: 8 },
   vazio: { color: colors.textMuted, fontSize: 13, paddingVertical: 8 },
   linha: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: colors.border },

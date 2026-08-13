@@ -64,6 +64,7 @@ export interface EventoCalendario {
     bairro: string | null;
     cidade: string | null;
     uf: string | null;
+    cep: string | null;
   };
   data: string | null;
   status: string;
@@ -91,7 +92,7 @@ export async function saveRota(date: string, optimizedRoute: unknown, stops: unk
   return data.data;
 }
 
-/** Monta o endereço completo a partir do evento */
+/** Monta o endereço completo a partir do evento (com CEP — melhora o geocoding) */
 export function enderecoDoEvento(e: EventoCalendario): string {
   const c = e.cliente;
   const partes = [
@@ -100,6 +101,7 @@ export function enderecoDoEvento(e: EventoCalendario): string {
     c.complemento ? ` ${c.complemento}` : '',
     c.bairro ? ` - ${c.bairro}` : '',
     c.cidade ? ` - ${c.cidade}${c.uf ? `-${c.uf}` : ''}` : '',
+    c.cep ? ` - ${c.cep}` : '',
   ];
   return partes.join('').trim();
 }

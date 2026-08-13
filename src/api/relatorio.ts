@@ -9,6 +9,8 @@ export interface RelatorioDia {
   data: string;
   totalColetas: number;
   totalEntregas: number;
+  coletasAgendadas?: number;
+  entregasAgendadas?: number;
   valorColetas?: number;
   valorEntregas?: number;
   porTipoServico: Array<{ categoria: string; quantidade: number; valor?: number }>;

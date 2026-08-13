@@ -213,9 +213,9 @@ export default function AlmoxarifadoScreen() {
             tapetes.map((tapete) => {
               const carregado = !!tapete.carregamentoVeiculo;
               const entregue = tapete.faseAtual === 'ENTREGUE';
-              // "Carregar" (baixa de saída) só para devoluções/entregas — as coletas
-              // (entrada) não usam o botão (issue 3)
-              const podeCarregar = tapete.faseAtual === 'F4_DEVOLUCAO';
+              // "Carregar" (baixa de saída) só para fases de saída (SECAGEM/F4_DEVOLUCAO)
+              // — as coletas (entrada) não usam o botão (issue 3)
+              const podeCarregar = ['SECAGEM', 'F4_DEVOLUCAO'].includes(tapete.faseAtual);
               const servicos = tapete.itens
                 .map((i) => {
                   const medidas =
