@@ -213,6 +213,9 @@ export default function AlmoxarifadoScreen() {
             tapetes.map((tapete) => {
               const carregado = !!tapete.carregamentoVeiculo;
               const entregue = tapete.faseAtual === 'ENTREGUE';
+              // "Carregar" (baixa de saída) só para devoluções/entregas — as coletas
+              // (entrada) não usam o botão (issue 3)
+              const podeCarregar = tapete.faseAtual === 'F4_DEVOLUCAO';
               const servicos = tapete.itens
                 .map((i) => {
                   const medidas =
@@ -242,7 +245,7 @@ export default function AlmoxarifadoScreen() {
                     </Text>
                   )}
 
-                  {!entregue && (
+                  {!entregue && podeCarregar && (
                     <TouchableOpacity
                       style={[styles.checkboxRow, toggling === tapete.id && styles.botaoDisabled]}
                       onPress={() => void toggleCarregar(tapete)}

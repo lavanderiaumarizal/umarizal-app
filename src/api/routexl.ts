@@ -22,7 +22,8 @@ export interface Waypoint {
 export interface Stop {
   ordem: number;
   orcamentoId: string | null;
-  cliente: unknown;
+  cliente: { nome: string; telefone: string | null } | null;
+  codigo?: string | null;
   endereco: { logradouro: string } | null;
   tipo: 'COLETA' | 'ENTREGA';
   status: unknown;

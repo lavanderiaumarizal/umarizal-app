@@ -204,6 +204,27 @@ export interface OrcamentoDocumentacao {
   }>;
 }
 
+/** Estatísticas do dashboard (admin — issue 4) */
+export interface DashboardStats {
+  totalOrcamentos: number;
+  aprovados: number;
+  recusados: number;
+  totalClientes: number;
+  faturamentoTotal: number;
+  faturamento: number;
+  totalAprovados: number;
+  taxaConversao: number;
+  ticketMedio: number;
+  ocupacaoEstufa: number;
+  cicloMedio: number;
+}
+
+/** GET /api/orcamentos/stats */
+export async function getDashboardStats(): Promise<DashboardStats> {
+  const { data } = await api.get<ApiSuccessResponse<DashboardStats>>('/orcamentos/stats');
+  return data.data;
+}
+
 /** GET /api/orcamentos/documentacao-pendente (B21) */
 export async function documentacaoPendente(): Promise<OrcamentoDocumentacao[]> {
   const { data } = await api.get<ApiSuccessResponse<OrcamentoDocumentacao[]>>('/orcamentos/documentacao-pendente');

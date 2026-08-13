@@ -28,6 +28,7 @@ import { colors, primaryGradient } from '../theme';
 import { useAuthStore } from '../store/authStore';
 import { useAppStore } from '../store/appStore';
 import { minhasColetas, minhasEntregas } from '../api/orcamentos';
+import { getPrevisao, type PrevisaoDia } from '../api/weather';
 import DashboardCard from '../components/DashboardCard';
 import type { Perfil } from '../types';
 import type { RootStackParamList } from '../navigation/AppNavigator';
@@ -39,6 +40,13 @@ const PERFIL_LABEL: Record<Perfil, string> = {
   lavagem: 'Lavagem',
   secagem: 'Secagem',
 };
+
+/** Dia da semana curto ("seg", "ter"...) a partir de data ISO */
+function fmtDiaSemana(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '—';
+  return d.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '');
+}
 
 interface CardDef {
   icon: string;
@@ -57,6 +65,7 @@ function cardsDoPerfil(
   onAbrirProducao?: () => void,
   onAbrirColetas?: () => void,
   onAbrirEntregas?: () => void,
+  onAbrirResumo?: () => void,
 ): CardDef[] {
   switch (perfil) {
     case 'motorista':
@@ -114,8 +123,8 @@ function cardsDoPerfil(
       ];
     case 'admin':
       return [
-        { icon: '📊', title: 'Resumo Geral', value: null, subtitle: 'Aguardando kanban (B18)', accent: colors.primary },
-        { icon: '💰', title: 'Financeiro', value: null, subtitle: 'Somente admin · Aguardando B18', accent: colors.brandGold },
+        { icon: '📊', title: 'Resumo Geral', value: null, subtitle: 'Orçamentos e conversão · tocar para abrir', accent: colors.primary, onPress: onAbrirResumo },
+        { icon: '💰', title: 'Financeiro', value: null, subtitle: 'Faturamento e ticket · tocar para abrir', accent: colors.brandGold, onPress: onAbrirResumo },
         { icon: '👥', title: 'Todos os Perfis', value: null, subtitle: 'Aguardando kanban (B18)', accent: colors.brandPink },
       ];
   }
@@ -136,6 +145,7 @@ export default function DashboardScreen() {
     coletas: null,
     entregas: null,
   });
+  const [previsao, setPrevisao] = useState<PrevisaoDia[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
   const carregarDados = useCallback(async () => {
@@ -159,11 +169,24 @@ export default function DashboardScreen() {
     void carregarDados();
   }, [carregarDados]);
 
+  const carregarTempo = useCallback(async () => {
+    try {
+      const p = await getPrevisao(16);
+      setPrevisao(p);
+    } catch {
+      setPrevisao([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    void carregarTempo();
+  }, [carregarTempo]);
+
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await carregarDados();
+    await Promise.all([carregarDados(), carregarTempo()]);
     setRefreshing(false);
-  }, [carregarDados]);
+  }, [carregarDados, carregarTempo]);
 
   const cards = cardsDoPerfil(
     perfil,
@@ -172,6 +195,7 @@ export default function DashboardScreen() {
     () => navigation.navigate('Producao', { perfil }),
     () => navigation.navigate('MinhasColetas', { tipo: 'coleta' }),
     () => navigation.navigate('MinhasColetas', { tipo: 'entrega' }),
+    () => navigation.navigate('AdminResumo'),
   );
 
   return (
@@ -211,6 +235,35 @@ export default function DashboardScreen() {
               </TouchableOpacity>
             ))}
           </View>
+        </View>
+      )}
+
+      {/* Previsão do tempo (todos os usuários — issue 8) */}
+      {previsao.length > 0 && (
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>🌦️ Previsão do Tempo</Text>
+          <View style={styles.tempoHoje}>
+            <Text style={styles.tempoIcone}>{previsao[0].icone}</Text>
+            <View style={styles.tempoInfo}>
+              <Text style={styles.tempoMaxMin}>
+                {previsao[0].temperaturaMax ?? '—'}° máx · {previsao[0].temperaturaMin ?? '—'}° mín
+              </Text>
+              <Text style={styles.tempoDetalhe}>
+                🌧 {previsao[0].probabilidadeChuva ?? 0}% · 💧 {previsao[0].umidadeMax ?? '—'}% · 💨{' '}
+                {previsao[0].ventoMax ?? '—'} km/h
+              </Text>
+            </View>
+          </View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tempoLista}>
+            {previsao.map((d, i) => (
+              <View key={d.data} style={[styles.tempoDia, i === 0 && styles.tempoDiaHoje]}>
+                <Text style={styles.tempoDiaLabel}>{i === 0 ? 'Hoje' : fmtDiaSemana(d.data)}</Text>
+                <Text style={styles.tempoDiaIcone}>{d.icone}</Text>
+                <Text style={styles.tempoDiaTemp}>{d.temperaturaMax ?? '—'}°</Text>
+                <Text style={styles.tempoDiaChuva}>🌧 {d.probabilidadeChuva ?? 0}%</Text>
+              </View>
+            ))}
+          </ScrollView>
         </View>
       )}
 
@@ -352,6 +405,65 @@ const styles = StyleSheet.create({
   chipTextOn: {
     color: colors.active,
     fontWeight: 'bold',
+  },
+  tempoHoje: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 10,
+  },
+  tempoIcone: {
+    fontSize: 36,
+  },
+  tempoInfo: {
+    flex: 1,
+  },
+  tempoMaxMin: {
+    color: colors.text,
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  tempoDetalhe: {
+    color: colors.textSecondary,
+    fontSize: 12,
+    marginTop: 2,
+  },
+  tempoLista: {
+    marginHorizontal: -16,
+  },
+  tempoDia: {
+    alignItems: 'center',
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    marginHorizontal: 4,
+    minWidth: 62,
+  },
+  tempoDiaHoje: {
+    borderColor: colors.primary,
+    backgroundColor: colors.activeBg,
+  },
+  tempoDiaLabel: {
+    color: colors.textSecondary,
+    fontSize: 11,
+    textTransform: 'capitalize',
+  },
+  tempoDiaIcone: {
+    fontSize: 18,
+    marginVertical: 4,
+  },
+  tempoDiaTemp: {
+    color: colors.text,
+    fontSize: 13,
+    fontWeight: 'bold',
+  },
+  tempoDiaChuva: {
+    color: colors.info,
+    fontSize: 10,
+    marginTop: 2,
   },
   nota: {
     color: colors.textMuted,

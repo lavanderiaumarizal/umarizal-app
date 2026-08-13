@@ -89,16 +89,16 @@ export default function DetalhesOrcamentoScreen({
     setLoading(true);
     setErro(null);
     try {
-      const [o, f, e] = await Promise.all([
+      // Promise.allSettled: se um item falhar (ex.: fotos), o restante continua
+      const [o, f, e] = await Promise.allSettled([
         getOrcamento(orcamentoId),
         getFotos(orcamentoId),
         getEtapas(orcamentoId),
       ]);
-      setOrcamento(o);
-      setFotos(f);
-      setEtapas(e);
-    } catch {
-      setErro('Não foi possível carregar os detalhes. Verifique sua conexão.');
+      if (o.status === 'fulfilled') setOrcamento(o.value);
+      else setErro('Não foi possível carregar os detalhes. Verifique sua conexão.');
+      if (f.status === 'fulfilled') setFotos(f.value);
+      if (e.status === 'fulfilled') setEtapas(e.value);
     } finally {
       setLoading(false);
     }
@@ -229,6 +229,17 @@ export default function DetalhesOrcamentoScreen({
         </View>
         <StatusBadge status={orcamento.status?.toLowerCase() ?? ''} />
       </View>
+
+      {/* Preço — somente admin (issue 1) */}
+      {perfis.includes('admin') && typeof orcamento.valorTotal === 'number' && (
+        <View style={styles.precoBox}>
+          <Text style={styles.precoValor}>R$ {orcamento.valorTotal.toFixed(2).replace('.', ',')}</Text>
+          <Text style={styles.precoDetalhe}>
+            {orcamento.formaPagamento ?? ''}
+            {orcamento.statusPagamento ? ` · ${orcamento.statusPagamento.replace(/_/g, ' ')}` : ''}
+          </Text>
+        </View>
+      )}
 
       {/* Fotos do estado inicial */}
       <Text style={styles.sectionTitle}>📷 Fotos do estado inicial</Text>
@@ -520,7 +531,19 @@ const styles = StyleSheet.create({
   itemHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   itemNome: { color: colors.text, fontSize: 14, fontWeight: '600' },
   itemCategoria: { color: colors.textMuted, fontSize: 11 },
-  itemMedidas: { color: colors.textSecondary, fontSize: 12, marginTop: 2 },
+  itemMedidas: { color: colors.textMuted, fontSize: 12, marginTop: 3 },
+  precoBox: {
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderLeftWidth: 4,
+    borderLeftColor: colors.brandGold,
+    padding: 14,
+    marginBottom: 14,
+  },
+  precoValor: { color: colors.brandGold, fontSize: 22, fontWeight: 'bold' },
+  precoDetalhe: { color: colors.textSecondary, fontSize: 12, marginTop: 2, textTransform: 'capitalize' },
   acoes: { marginTop: 20, backgroundColor: colors.surface, borderRadius: 12, borderWidth: 1, borderColor: colors.border, padding: 14 },
   acoesTitle: { color: colors.text, fontSize: 14, fontWeight: 'bold', marginBottom: 12 },
   botao: { borderRadius: 10, paddingVertical: 13, alignItems: 'center', marginTop: 8 },

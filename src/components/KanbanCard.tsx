@@ -8,6 +8,7 @@
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { colors } from '../theme';
 import StatusBadge from './StatusBadge';
+import Preco from './Preco';
 import { ETAPA_NOME } from '../api/kanban';
 import type { KanbanItem } from '../api/kanban';
 
@@ -40,6 +41,11 @@ export default function KanbanCard({ item, onPress }: { item: KanbanItem; onPres
       <Text style={styles.servico} numberOfLines={2}>
         {servicos || '—'}
       </Text>
+
+      {/* Preço — somente admin (backend filtra para os demais) */}
+      {typeof (orcamento as any).valorTotal === 'number' && (
+        <Preco value={(orcamento as any).valorTotal} style={styles.valor} />
+      )}
 
       {etapaAtual !== null && (
         <Text style={styles.etapa}>
@@ -85,6 +91,12 @@ const styles = StyleSheet.create({
   etapa: {
     color: colors.textMuted,
     fontSize: 11,
+    marginTop: 8,
+  },
+  valor: {
+    color: colors.brandGold,
+    fontSize: 14,
+    fontWeight: 'bold',
     marginTop: 8,
   },
 });

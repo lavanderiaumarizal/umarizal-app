@@ -21,6 +21,7 @@ import RelatorioDiaScreen from '../screens/RelatorioDia';
 import DocumentacaoScreen from '../screens/Documentacao';
 import DocumentacaoOrcamentoScreen from '../screens/DocumentacaoOrcamento';
 import MinhasColetasEntregasScreen from '../screens/MinhasColetasEntregas';
+import AdminResumoScreen from '../screens/AdminResumo';
 import type { Perfil } from '../types';
 
 export type RootStackParamList = {
@@ -35,6 +36,7 @@ export type RootStackParamList = {
   Documentacao: undefined;
   DocumentacaoOrcamento: { orcamentoId: string };
   MinhasColetas: { tipo: 'coleta' | 'entrega' };
+  AdminResumo: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -119,6 +121,11 @@ export default function AppNavigator() {
                 title: route.params.tipo === 'coleta' ? 'Minhas Coletas' : 'Minhas Entregas',
                 headerShown: true,
               })}
+            />
+            <Stack.Screen
+              name="AdminResumo"
+              component={AdminResumoScreen}
+              options={{ title: 'Resumo Geral', headerShown: true }}
             />
           </>
         ) : (
