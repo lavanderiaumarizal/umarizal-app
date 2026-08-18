@@ -23,9 +23,9 @@ import {
 import type { RouteProp } from '@react-navigation/native';
 import { colors, primaryGradient } from '../theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { getOrcamento, getFotos, type Foto } from '../api/orcamentos';
+import { getOrcamento, getFotos, getHistoricoFases, type Foto, type FaseHistorico } from '../api/orcamentos';
 import { getEtapas, iniciarEtapa, concluirEtapa, retornarEtapa, type EtapasResponse } from '../api/etapas';
-import EtapaTimeline from '../components/EtapaTimeline';
+import FaseTimeline from '../components/FaseTimeline';
 import StatusBadge from '../components/StatusBadge';
 import InspecaoChecklist from '../components/InspecaoChecklist';
 import CameraCapture from '../components/CameraCapture';
@@ -66,6 +66,7 @@ export default function DetalhesOrcamentoScreen({
   const [orcamento, setOrcamento] = useState<any>(null);
   const [fotos, setFotos] = useState<Foto[]>([]);
   const [etapas, setEtapas] = useState<EtapasResponse | null>(null);
+  const [historico, setHistorico] = useState<FaseHistorico[]>([]);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
   const [fotoAmpliada, setFotoAmpliada] = useState<string | null>(null);
@@ -90,15 +91,17 @@ export default function DetalhesOrcamentoScreen({
     setErro(null);
     try {
       // Promise.allSettled: se um item falhar (ex.: fotos), o restante continua
-      const [o, f, e] = await Promise.allSettled([
+      const [o, f, e, h] = await Promise.allSettled([
         getOrcamento(orcamentoId),
         getFotos(orcamentoId),
         getEtapas(orcamentoId),
+        getHistoricoFases(orcamentoId),
       ]);
       if (o.status === 'fulfilled') setOrcamento(o.value);
       else setErro('Não foi possível carregar os detalhes. Verifique sua conexão.');
       if (f.status === 'fulfilled') setFotos(f.value);
       if (e.status === 'fulfilled') setEtapas(e.value);
+      if (h.status === 'fulfilled') setHistorico(h.value);
     } finally {
       setLoading(false);
     }
@@ -292,10 +295,14 @@ export default function DetalhesOrcamentoScreen({
         )}
       </View>
 
-      {/* Timeline das 12 etapas */}
-      <Text style={styles.sectionTitle}>🔄 Timeline (12 etapas)</Text>
+      {/* Timeline das FASES (mesma do painel admin — issue 8) */}
+      <Text style={styles.sectionTitle}>🔄 Trilha de Fases</Text>
       <View style={styles.card}>
-        {etapas ? <EtapaTimeline etapas={etapas} /> : <Text style={styles.vazio}>Sem dados de etapas.</Text>}
+        {historico.length > 0 || orcamento?.faseAtual ? (
+          <FaseTimeline faseAtual={orcamento?.faseAtual ?? ''} historico={historico} />
+        ) : (
+          <Text style={styles.vazio}>Sem dados de fases.</Text>
+        )}
       </View>
 
       {/* Ações por etapa */}

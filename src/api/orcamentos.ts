@@ -90,19 +90,19 @@ export interface OrcamentoDetalhe extends OrcamentoResumo {
   itens: ItemResumo[];
 }
 
-/** POST /api/orcamentos/:id/coleta-realizada (B9) */
+/** POST /api/orcamentos/:id/coleta-realizada (B9) — assinatura opcional (login) */
 export async function coletaRealizada(
   id: string,
-  dados: { fotos: string[]; assinatura: string; observacoes?: string },
+  dados: { fotos?: string[]; assinatura?: string | null; observacoes?: string },
 ): Promise<ApiSuccessResponse<any>> {
   const { data } = await api.post(`/orcamentos/${id}/coleta-realizada`, dados);
   return data;
 }
 
-/** POST /api/orcamentos/:id/entrega-realizada (B10) */
+/** POST /api/orcamentos/:id/entrega-realizada (B10) — assinatura opcional (login) */
 export async function entregaRealizada(
   id: string,
-  dados: { assinatura: string; observacoes?: string; fotos?: string[] },
+  dados: { assinatura?: string | null; observacoes?: string; fotos?: string[] },
 ): Promise<ApiSuccessResponse<any>> {
   const { data } = await api.post(`/orcamentos/${id}/entrega-realizada`, dados);
   return data;
@@ -228,6 +228,26 @@ export async function getDashboardStats(): Promise<DashboardStats> {
 /** GET /api/orcamentos/documentacao-pendente (B21) */
 export async function documentacaoPendente(): Promise<OrcamentoDocumentacao[]> {
   const { data } = await api.get<ApiSuccessResponse<OrcamentoDocumentacao[]>>('/orcamentos/documentacao-pendente');
+  return data.data;
+}
+
+/** Histórico de fases (timeline do painel admin — issue 8) */
+export interface FaseHistorico {
+  id: number;
+  fase: string;
+  label: string;
+  status: string;
+  usuarioId: number | null;
+  fotos: unknown[];
+  observacoes: string | null;
+  iniciadoEm: string | null;
+  concluidoEm: string | null;
+  duracaoSeg: number | null;
+}
+
+/** GET /api/orcamentos/:id/fase/historico — mesma timeline do painel admin */
+export async function getHistoricoFases(id: string): Promise<FaseHistorico[]> {
+  const { data } = await api.get<ApiSuccessResponse<FaseHistorico[]>>(`/orcamentos/${id}/fase/historico`);
   return data.data;
 }
 

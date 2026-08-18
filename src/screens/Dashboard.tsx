@@ -28,6 +28,7 @@ import { colors, primaryGradient } from '../theme';
 import { useAuthStore } from '../store/authStore';
 import { useAppStore } from '../store/appStore';
 import { minhasColetas, minhasEntregas } from '../api/orcamentos';
+import { getRotaDoDia } from '../api/routexl';
 import { getPrevisao, type PrevisaoDia } from '../api/weather';
 import DashboardCard from '../components/DashboardCard';
 import type { Perfil } from '../types';
@@ -68,6 +69,7 @@ interface CardDef {
 function cardsDoPerfil(
   perfil: Perfil,
   dados: { coletas: number | null; entregas: number | null },
+  dadosRota?: { total: number; concluidos: number } | null,
   onAbrirRota?: () => void,
   onAbrirProducao?: () => void,
   onAbrirColetas?: () => void,
@@ -80,8 +82,8 @@ function cardsDoPerfil(
         {
           icon: '🚚',
           title: 'Minha Rota de Hoje',
-          value: null,
-          subtitle: 'RouteXL · tocar para abrir',
+          value: dadosRota?.total ?? null,
+          subtitle: 'Paradas de hoje · tocar para abrir',
           accent: colors.primary,
           onPress: onAbrirRota,
         },
@@ -104,8 +106,8 @@ function cardsDoPerfil(
         {
           icon: '✅',
           title: 'Finalizados Hoje',
-          value: null,
-          subtitle: 'Aguardando kanban (B18)',
+          value: dadosRota?.concluidos ?? null,
+          subtitle: 'Paradas concluídas na rota',
           accent: colors.success,
         },
       ];
@@ -152,6 +154,7 @@ export default function DashboardScreen() {
     coletas: null,
     entregas: null,
   });
+  const [rotaHoje, setRotaHoje] = useState<{ total: number; concluidos: number } | null>(null);
   const [previsao, setPrevisao] = useState<PrevisaoDia[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -176,6 +179,21 @@ export default function DashboardScreen() {
     void carregarDados();
   }, [carregarDados]);
 
+  const carregarRotaHoje = useCallback(async () => {
+    try {
+      const hoje = new Date();
+      const iso = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
+      const r = await getRotaDoDia(iso);
+      if (r) {
+        setRotaHoje({ total: r.stops.length, concluidos: r.stops.filter((s) => s.concluido).length });
+      } else {
+        setRotaHoje({ total: 0, concluidos: 0 });
+      }
+    } catch {
+      setRotaHoje(null);
+    }
+  }, []);
+
   const carregarTempo = useCallback(async () => {
     try {
       const p = await getPrevisao(16);
@@ -186,18 +204,20 @@ export default function DashboardScreen() {
   }, []);
 
   useEffect(() => {
+    void carregarRotaHoje();
     void carregarTempo();
-  }, [carregarTempo]);
+  }, [carregarRotaHoje, carregarTempo]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await Promise.all([carregarDados(), carregarTempo()]);
+    await Promise.all([carregarDados(), carregarRotaHoje(), carregarTempo()]);
     setRefreshing(false);
-  }, [carregarDados, carregarTempo]);
+  }, [carregarDados, carregarRotaHoje, carregarTempo]);
 
   const cards = cardsDoPerfil(
     perfil,
     dados,
+    rotaHoje,
     () => navigation.navigate('RotaDoDia'),
     () => navigation.navigate('Producao', { perfil }),
     () => navigation.navigate('MinhasColetas', { tipo: 'coleta' }),

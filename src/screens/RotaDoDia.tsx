@@ -39,7 +39,6 @@ import {
 } from '../api/routexl';
 import { coletaRealizada, entregaRealizada } from '../api/orcamentos';
 import CameraCapture from '../components/CameraCapture';
-import SignaturePad from '../components/SignaturePad';
 import MapaRota from '../components/MapaRota';
 import type { RootStackParamList } from '../navigation/AppNavigator';
 
@@ -73,7 +72,6 @@ export default function RotaDoDiaScreen() {
 
   const [acao, setAcao] = useState<AcaoModal>(null);
   const [fotos, setFotos] = useState<string[]>([]);
-  const [assinatura, setAssinatura] = useState<string | null>(null);
   const [observacoes, setObservacoes] = useState('');
   const [enviando, setEnviando] = useState(false);
   const [mostrarCamera, setMostrarCamera] = useState(false);
@@ -240,36 +238,31 @@ export default function RotaDoDiaScreen() {
     void Linking.openURL(url).catch(() => undefined);
   }
 
-  // ============================================================
-  // Fluxos de ação (coleta B9 / entrega B10)
-  // ============================================================
+  /** Fluxos de ação (coleta B9 / entrega B10) — sem assinatura: o login é a assinatura */
   function abrirColeta(stop: Stop) {
     setFotos([]);
-    setAssinatura(null);
     setObservacoes('');
     setAcao({ tipo: 'coleta', stop });
   }
 
   function abrirEntrega(stop: Stop) {
     setFotos([]);
-    setAssinatura(null);
     setObservacoes('');
     setAcao({ tipo: 'entrega', stop });
   }
 
   async function confirmarAcao() {
-    if (!acao || !assinatura) return;
+    if (!acao) return;
     setEnviando(true);
     try {
       if (acao.tipo === 'coleta') {
         await coletaRealizada(acao.stop.orcamentoId!, {
           fotos,
-          assinatura,
           observacoes: observacoes || undefined,
         });
       } else {
         await entregaRealizada(acao.stop.orcamentoId!, {
-          assinatura,
+          fotos,
           observacoes: observacoes || undefined,
         });
       }
@@ -388,6 +381,8 @@ export default function RotaDoDiaScreen() {
           {rota.stops.map((stop) => {
             const concluida = stop.concluido;
             const ehColeta = stop.tipo === 'COLETA';
+            // Endereços fixos não têm ordem de serviço — sem botões de confirmação
+            const ehFixo = (stop.orcamentoId ?? '').startsWith('fixo-');
             return (
               <TouchableOpacity
                 key={stop.ordem}
@@ -416,7 +411,7 @@ export default function RotaDoDiaScreen() {
                   </View>
                 </View>
 
-                {!concluida && (
+                {!concluida && !ehFixo && (
                   <View style={styles.acoes}>
                     <TouchableOpacity style={styles.botaoMaps} onPress={() => navegarParada(stop)}>
                       <Text style={styles.botaoMapsText}>📍 Maps</Text>
@@ -435,7 +430,7 @@ export default function RotaDoDiaScreen() {
                         onPress={() => abrirEntrega(stop)}
                         disabled={!stop.orcamentoId}
                       >
-                        <Text style={styles.botaoAcaoText}>Entregar</Text>
+                        <Text style={styles.botaoAcaoText}>Entregue</Text>
                       </TouchableOpacity>
                     )}
                   </View>
@@ -447,13 +442,14 @@ export default function RotaDoDiaScreen() {
       )}
 
       {/* ============================================================
-          Modal de COELTA: câmera → fotos + assinatura
+          Modal de COLETA: câmera opcional → confirma (o login é a assinatura)
       ============================================================ */}
       <Modal visible={acao?.tipo === 'coleta' && !mostrarCamera} transparent animationType="slide">
         <View style={styles.modalWrap}>
           <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>📦 Registrar Coleta</Text>
+            <Text style={styles.modalTitle}>📦 Confirmar Coleta</Text>
             <Text style={styles.modalStop}>{limparEndereco(acao?.stop.endereco?.logradouro ?? '')}</Text>
+            <Text style={styles.modalDica}>O registro usa seu login como assinatura.</Text>
 
             <View style={styles.fotoRow}>
               {fotos.map((f, i) => (
@@ -465,14 +461,9 @@ export default function RotaDoDiaScreen() {
                 </View>
               ))}
               <TouchableOpacity style={styles.botaoCamera} onPress={() => setMostrarCamera(true)}>
-                <Text style={styles.botaoCameraText}>📷 + Foto</Text>
+                <Text style={styles.botaoCameraText}>📷 + Foto (opcional)</Text>
               </TouchableOpacity>
             </View>
-
-            <SignaturePad
-              onOK={setAssinatura}
-              onEmpty={() => setAssinatura(null)}
-            />
 
             <TextInput
               style={styles.obsInput}
@@ -488,9 +479,9 @@ export default function RotaDoDiaScreen() {
                 <Text style={styles.botaoCancelarText}>Cancelar</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.botaoConfirmar, (!assinatura || enviando) && styles.botaoDisabled]}
+                style={[styles.botaoConfirmar, enviando && styles.botaoDisabled]}
                 onPress={() => void confirmarAcao()}
-                disabled={!assinatura || enviando}
+                disabled={enviando}
               >
                 {enviando ? (
                   <ActivityIndicator color="#fff" />
@@ -515,15 +506,28 @@ export default function RotaDoDiaScreen() {
       </Modal>
 
       {/* ============================================================
-          Modal de ENTREGA: assinatura
+          Modal de ENTREGA: câmera opcional → confirma (o login é a assinatura)
       ============================================================ */}
-      <Modal visible={acao?.tipo === 'entrega'} transparent animationType="slide">
+      <Modal visible={acao?.tipo === 'entrega' && !mostrarCamera} transparent animationType="slide">
         <View style={styles.modalWrap}>
           <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>🚚 Registrar Entrega</Text>
+            <Text style={styles.modalTitle}>🚚 Confirmar Entrega</Text>
             <Text style={styles.modalStop}>{limparEndereco(acao?.stop.endereco?.logradouro ?? '')}</Text>
+            <Text style={styles.modalDica}>O registro usa seu login como assinatura.</Text>
 
-            <SignaturePad onOK={setAssinatura} onEmpty={() => setAssinatura(null)} />
+            <View style={styles.fotoRow}>
+              {fotos.map((f, i) => (
+                <View key={i} style={styles.fotoThumbWrap}>
+                  {/* eslint-disable-next-line react-native/no-inline-styles */}
+                  <View style={[styles.fotoThumb, { backgroundColor: colors.surfaceAlt }]}>
+                    <Text style={styles.fotoCount}>{i + 1}</Text>
+                  </View>
+                </View>
+              ))}
+              <TouchableOpacity style={styles.botaoCamera} onPress={() => setMostrarCamera(true)}>
+                <Text style={styles.botaoCameraText}>📷 + Foto (opcional)</Text>
+              </TouchableOpacity>
+            </View>
 
             <TextInput
               style={styles.obsInput}
@@ -539,9 +543,9 @@ export default function RotaDoDiaScreen() {
                 <Text style={styles.botaoCancelarText}>Cancelar</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.botaoConfirmar, (!assinatura || enviando) && styles.botaoDisabled]}
+                style={[styles.botaoConfirmar, enviando && styles.botaoDisabled]}
                 onPress={() => void confirmarAcao()}
-                disabled={!assinatura || enviando}
+                disabled={enviando}
               >
                 {enviando ? (
                   <ActivityIndicator color="#fff" />
@@ -737,6 +741,7 @@ const styles = StyleSheet.create({
     maxHeight: '90%',
   },
   modalTitle: { color: colors.text, fontSize: 16, fontWeight: 'bold' },
+  modalDica: { color: colors.textMuted, fontSize: 12, marginTop: 2, marginBottom: 6 },
   modalStop: { color: colors.textSecondary, fontSize: 12, marginTop: 2, marginBottom: 8 },
   fotoRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginVertical: 8 },
   fotoThumbWrap: { width: 56, height: 56, borderRadius: 8, overflow: 'hidden' },
