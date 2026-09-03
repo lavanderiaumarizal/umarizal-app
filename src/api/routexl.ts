@@ -22,7 +22,12 @@ export interface Waypoint {
 export interface Stop {
   ordem: number;
   orcamentoId: string | null;
-  cliente: { nome: string; telefone: string | null } | null;
+  cliente: {
+    nome: string;
+    telefone: string | null;
+    complemento?: string | null;
+    numero?: string | null;
+  } | null;
   codigo?: string | null;
   endereco: { logradouro: string } | null;
   tipo: 'COLETA' | 'ENTREGA';
@@ -92,18 +97,22 @@ export async function saveRota(date: string, optimizedRoute: unknown, stops: unk
   return data.data;
 }
 
-/** Monta o endereço completo a partir do evento (com CEP — melhora o geocoding) */
+/** CEP só dígitos → XXXXX-XXX (formato usado no endereço do RouteXL) */
+function formatarCep(cep?: string | null): string {
+  const digitos = (cep ?? '').replace(/\D/g, '');
+  return digitos.length === 8 ? `${digitos.slice(0, 5)}-${digitos.slice(5)}` : '';
+}
+
+/**
+ * Endereço para o RouteXL (mesmo formato do painel admin):
+ * "Rua X, N - CEP XXXXX-XXX". Complemento NÃO entra — é apenas informativo
+ * (exibido na parada e no detalhe do orçamento).
+ */
 export function enderecoDoEvento(e: EventoCalendario): string {
   const c = e.cliente;
-  const partes = [
-    c.endereco,
-    c.numero ? `, ${c.numero}` : '',
-    c.complemento ? ` ${c.complemento}` : '',
-    c.bairro ? ` - ${c.bairro}` : '',
-    c.cidade ? ` - ${c.cidade}${c.uf ? `-${c.uf}` : ''}` : '',
-    c.cep ? ` - ${c.cep}` : '',
-  ];
-  return partes.join('').trim();
+  const cep = formatarCep(c.cep);
+  const ruaNumero = [c.endereco, c.numero].filter(Boolean).join(', ');
+  return cep ? `${ruaNumero} - CEP ${cep}` : ruaNumero;
 }
 
 /**

@@ -20,6 +20,7 @@ import {
   StyleSheet,
   ScrollView,
   RefreshControl,
+  Modal,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -54,6 +55,12 @@ function fatorSecagemLabel(f?: 'bom' | 'regular' | 'ruim'): string {
   if (f === 'bom') return '☀️ Bom para secagem';
   if (f === 'regular') return '⛅ Regular para secagem';
   return '🌧️ Ruim para secagem (chuva)';
+}
+
+/** Data ISO "YYYY-MM-DD" → "dd/mm" */
+function fmtDiaCurto(iso: string): string {
+  const [, m, d] = iso.split('-');
+  return d && m ? `${d}/${m}` : iso;
 }
 
 interface CardDef {
@@ -156,6 +163,7 @@ export default function DashboardScreen() {
   });
   const [rotaHoje, setRotaHoje] = useState<{ total: number; concluidos: number } | null>(null);
   const [previsao, setPrevisao] = useState<PrevisaoDia[]>([]);
+  const [diaPrevisao, setDiaPrevisao] = useState<PrevisaoDia | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
   const carregarDados = useCallback(async () => {
@@ -284,16 +292,71 @@ export default function DashboardScreen() {
           </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tempoLista}>
             {previsao.map((d, i) => (
-              <View key={d.data} style={[styles.tempoDia, i === 0 && styles.tempoDiaHoje]}>
+              <TouchableOpacity
+                key={d.data}
+                style={[styles.tempoDia, i === 0 && styles.tempoDiaHoje]}
+                onPress={() => setDiaPrevisao(d)}
+              >
                 <Text style={styles.tempoDiaLabel}>{i === 0 ? 'Hoje' : fmtDiaSemana(d.data)}</Text>
                 <Text style={styles.tempoDiaIcone}>{d.icone}</Text>
                 <Text style={styles.tempoDiaTemp}>{d.temperaturaMax ?? '—'}°</Text>
                 <Text style={styles.tempoDiaChuva}>🌧 {d.chuvaTotal ?? 0}mm</Text>
-              </View>
+              </TouchableOpacity>
             ))}
           </ScrollView>
         </View>
       )}
+
+      {/* Modal com os detalhes da previsão de um dia */}
+      <Modal visible={diaPrevisao !== null} transparent animationType="slide" onRequestClose={() => setDiaPrevisao(null)}>
+        <View style={styles.modalWrap}>
+          <View style={styles.modalCard}>
+            {diaPrevisao && (
+              <>
+                <Text style={styles.modalTitle}>
+                  {diaPrevisao.icone} {fmtDiaSemana(diaPrevisao.data)} · {fmtDiaCurto(diaPrevisao.data)}
+                </Text>
+                <Text style={styles.modalFator}>{fatorSecagemLabel(diaPrevisao.fatorSecagem)}</Text>
+                <View style={styles.modalGrid}>
+                  <View style={styles.modalItem}>
+                    <Text style={styles.modalItemLabel}>Máxima</Text>
+                    <Text style={styles.modalItemValor}>{diaPrevisao.temperaturaMax ?? '—'}°C</Text>
+                  </View>
+                  <View style={styles.modalItem}>
+                    <Text style={styles.modalItemLabel}>Mínima</Text>
+                    <Text style={styles.modalItemValor}>{diaPrevisao.temperaturaMin ?? '—'}°C</Text>
+                  </View>
+                  <View style={styles.modalItem}>
+                    <Text style={styles.modalItemLabel}>Média</Text>
+                    <Text style={styles.modalItemValor}>{diaPrevisao.temperaturaMedia ?? '—'}°C</Text>
+                  </View>
+                  <View style={styles.modalItem}>
+                    <Text style={styles.modalItemLabel}>Chuva</Text>
+                    <Text style={styles.modalItemValor}>{diaPrevisao.chuvaTotal ?? 0} mm</Text>
+                  </View>
+                  <View style={styles.modalItem}>
+                    <Text style={styles.modalItemLabel}>Chance de chuva</Text>
+                    <Text style={styles.modalItemValor}>
+                      {diaPrevisao.probabilidadeChuva != null ? `${diaPrevisao.probabilidadeChuva}%` : '—'}
+                    </Text>
+                  </View>
+                  <View style={styles.modalItem}>
+                    <Text style={styles.modalItemLabel}>Umidade máx.</Text>
+                    <Text style={styles.modalItemValor}>{diaPrevisao.umidadeMax ?? '—'}%</Text>
+                  </View>
+                  <View style={styles.modalItem}>
+                    <Text style={styles.modalItemLabel}>Vento máx.</Text>
+                    <Text style={styles.modalItemValor}>{diaPrevisao.ventoMax ?? '—'} km/h</Text>
+                  </View>
+                </View>
+                <TouchableOpacity style={styles.modalFecharBtn} onPress={() => setDiaPrevisao(null)}>
+                  <Text style={styles.modalFecharTexto}>Fechar</Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+        </View>
+      </Modal>
 
       {/* Cards por perfil */}
       <View style={styles.grid}>
@@ -565,6 +628,67 @@ const styles = StyleSheet.create({
   },
   logoutText: {
     color: colors.danger,
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+  // Modal de detalhes da previsão do tempo
+  modalWrap: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'flex-end',
+  },
+  modalCard: {
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    paddingBottom: 32,
+  },
+  modalTitle: {
+    color: colors.text,
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  modalFator: {
+    color: colors.textSecondary,
+    fontSize: 14,
+    marginTop: 4,
+    marginBottom: 16,
+  },
+  modalGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  modalItem: {
+    width: '30%',
+    minWidth: 96,
+    flexGrow: 1,
+    backgroundColor: colors.background,
+    borderRadius: 10,
+    padding: 10,
+  },
+  modalItemLabel: {
+    color: colors.textMuted,
+    fontSize: 11,
+  },
+  modalItemValor: {
+    color: colors.text,
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginTop: 2,
+  },
+  modalFecharBtn: {
+    backgroundColor: colors.activeBg,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  modalFecharTexto: {
+    color: colors.active,
     fontWeight: 'bold',
     fontSize: 14,
   },

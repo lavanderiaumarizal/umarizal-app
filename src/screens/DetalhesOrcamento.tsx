@@ -270,6 +270,9 @@ export default function DetalhesOrcamentoScreen({
             {orcamento.cliente.bairro ? ` · ${orcamento.cliente.bairro}` : ''}
           </Text>
         ) : null}
+        {veEndereco && orcamento.cliente?.complemento ? (
+          <Text style={styles.clienteMeta}>🚪 {orcamento.cliente.complemento}</Text>
+        ) : null}
       </View>
 
       {/* Itens */}

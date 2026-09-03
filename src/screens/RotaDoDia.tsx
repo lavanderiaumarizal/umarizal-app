@@ -76,7 +76,9 @@ export default function RotaDoDiaScreen() {
   const [enviando, setEnviando] = useState(false);
   const [mostrarCamera, setMostrarCamera] = useState(false);
   const [mostrarMapa, setMostrarMapa] = useState(false);
-  const [mostrarReotimizar, setMostrarReotimizar] = useState(false);
+  // Modal de horário de saída — usado tanto pelo "Gerar Rota" (eventos do dia)
+  // quanto pelo "Re-otimizar" (paradas atuais), como no painel admin
+  const [mostrarHorarioSaida, setMostrarHorarioSaida] = useState(false);
   const [horarioSaida, setHorarioSaida] = useState('08:00');
 
   /** Converte as paradas carregadas para o formato do RouteXL (endereço limpo + código) */
@@ -118,13 +120,22 @@ export default function RotaDoDiaScreen() {
     setRefreshing(false);
   }, [data, carregar]);
 
-  /** F14.2 — Gerar rota: eventos do dia → RouteXL optimize → save-route */
+  /** F14.2 — Gerar rota: eventos do dia → RouteXL optimize → save-route
+   *  Mesmo fluxo do painel admin: endereço "Rua, N - CEP" (sem complemento),
+   *  inclui endereços FIXO e usa o horário de saída da lavanderia.
+   */
   async function gerarRota() {
+    const m = horarioSaida.match(/^(\d{1,2}):(\d{2})$/);
+    if (!m) {
+      setErro('Informe o horário no formato HH:MM (ex.: 08:00).');
+      return;
+    }
+    const minutos = parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
     setGerando(true);
     setErro(null);
     try {
       const eventos = await getEventosDia(fmtData(data));
-      const eventosDia = eventos.filter((e) => e.data === fmtData(data) && e.orcamentoId && e.tipo !== 'FIXO' as any);
+      const eventosDia = eventos.filter((e) => e.data === fmtData(data));
 
       if (eventosDia.length === 0) {
         setErro('Nenhum evento de coleta/entrega para esta data.');
@@ -132,18 +143,20 @@ export default function RotaDoDiaScreen() {
       }
 
       const stops = eventosDia.map((e) => ({
-        orcamentoId: e.orcamentoId,
+        orcamentoId: e.orcamentoId || `fixo-${e.id}`,
         tipo: e.tipo,
         endereco: enderecoDoEvento(e),
         codigo: e.codigo,
         servicetime: e.tempoPermanencia ?? 20,
       }));
 
-      const otimizada = await optimizeRota(stops, {});
+      const otimizada = await optimizeRota(stops, { date: fmtData(data), startTimeMinutes: minutos });
       await saveRota(fmtData(data), otimizada, stops);
       await carregar(data);
-    } catch {
-      setErro('Não foi possível gerar a rota (verifique o limite do RouteXL).');
+      setMostrarHorarioSaida(false);
+    } catch (err: any) {
+      const msgBackend = err?.response?.data?.error?.message || err?.response?.data?.message;
+      setErro(msgBackend || 'Não foi possível gerar a rota (verifique o limite do RouteXL).');
     } finally {
       setGerando(false);
     }
@@ -152,11 +165,17 @@ export default function RotaDoDiaScreen() {
   /** F14.3 — Flip: inverte a ordem das paradas (skipOptimisation: true) */
   async function flipRota() {
     if (!rota || rota.stops.length === 0) return;
+    const m = horarioSaida.match(/^(\d{1,2}):(\d{2})$/);
+    const minutos = m ? parseInt(m[1], 10) * 60 + parseInt(m[2], 10) : undefined;
     setGerando(true);
     setErro(null);
     try {
       const invertidos = stopsDaRota([...rota.stops].reverse());
-      const otimizada = await optimizeRota(invertidos, { skipOptimisation: true });
+      const otimizada = await optimizeRota(invertidos, {
+        date: fmtData(data),
+        startTimeMinutes: minutos,
+        skipOptimisation: true,
+      });
       await saveRota(fmtData(data), otimizada, invertidos);
       await carregar(data);
     } catch {
@@ -220,12 +239,13 @@ export default function RotaDoDiaScreen() {
     setErro(null);
     try {
       const stops = stopsDaRota(rota.stops);
-      const otimizada = await optimizeRota(stops, { startTimeMinutes: minutos });
+      const otimizada = await optimizeRota(stops, { date: fmtData(data), startTimeMinutes: minutos });
       await saveRota(fmtData(data), otimizada, stops);
       await carregar(data);
-      setMostrarReotimizar(false);
-    } catch {
-      setErro('Não foi possível re-otimizar a rota (verifique o limite do RouteXL).');
+      setMostrarHorarioSaida(false);
+    } catch (err: any) {
+      const msgBackend = err?.response?.data?.error?.message || err?.response?.data?.message;
+      setErro(msgBackend || 'Não foi possível re-otimizar a rota (verifique o limite do RouteXL).');
     } finally {
       setGerando(false);
     }
@@ -318,7 +338,7 @@ export default function RotaDoDiaScreen() {
           <Text style={styles.semRota}>🚚 Nenhuma rota para esta data.</Text>
           <TouchableOpacity
             style={styles.botaoPrimario}
-            onPress={() => void gerarRota()}
+            onPress={() => setMostrarHorarioSaida(true)}
             disabled={gerando}
           >
             {gerando ? (
@@ -348,14 +368,14 @@ export default function RotaDoDiaScreen() {
           <View style={styles.rotaAcoes}>
             <TouchableOpacity
               style={[styles.botaoAcaoRota, gerando && styles.botaoDisabled]}
-              onPress={() => void gerarRota()}
+              onPress={() => setMostrarHorarioSaida(true)}
               disabled={gerando}
             >
               <Text style={styles.botaoAcaoRotaText}>🔄 Gerar Rota</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.botaoAcaoRota, gerando && styles.botaoDisabled]}
-              onPress={() => setMostrarReotimizar(true)}
+              onPress={() => setMostrarHorarioSaida(true)}
               disabled={gerando}
             >
               <Text style={styles.botaoAcaoRotaText}>⏱️ Re-otimizar</Text>
@@ -381,14 +401,15 @@ export default function RotaDoDiaScreen() {
           {rota.stops.map((stop) => {
             const concluida = stop.concluido;
             const ehColeta = stop.tipo === 'COLETA';
-            // Endereços fixos não têm ordem de serviço — sem botões de confirmação
+            // Endereços fixos não têm ordem de serviço — sem botões de confirmação,
+            // mas com botão de mapa (navegação pelo endereço)
             const ehFixo = (stop.orcamentoId ?? '').startsWith('fixo-');
             return (
               <TouchableOpacity
                 key={stop.ordem}
                 style={[styles.parada, concluida && styles.paradaConcluida]}
                 onPress={() => {
-                  if (stop.orcamentoId) {
+                  if (stop.orcamentoId && !ehFixo) {
                     navigation.navigate('Detalhes', { orcamentoId: stop.orcamentoId });
                   }
                 }}
@@ -408,31 +429,36 @@ export default function RotaDoDiaScreen() {
                     <Text style={styles.paradaEndereco} numberOfLines={2}>
                       {limparEndereco(stop.endereco?.logradouro ?? 'Endereço não informado')}
                     </Text>
+                    {/* Complemento: apenas informativo (apto, bloco...) — não vai ao RouteXL */}
+                    {stop.cliente?.complemento ? (
+                      <Text style={styles.paradaComplemento} numberOfLines={1}>🚪 {stop.cliente.complemento}</Text>
+                    ) : null}
                   </View>
                 </View>
 
-                {!concluida && !ehFixo && (
+                {!concluida && (
                   <View style={styles.acoes}>
                     <TouchableOpacity style={styles.botaoMaps} onPress={() => navegarParada(stop)}>
                       <Text style={styles.botaoMapsText}>📍 Maps</Text>
                     </TouchableOpacity>
-                    {ehColeta ? (
-                      <TouchableOpacity
-                        style={[styles.botaoAcao, styles.botaoColeta]}
-                        onPress={() => abrirColeta(stop)}
-                        disabled={!stop.orcamentoId}
-                      >
-                        <Text style={styles.botaoAcaoText}>Coletar</Text>
-                      </TouchableOpacity>
-                    ) : (
-                      <TouchableOpacity
-                        style={[styles.botaoAcao, styles.botaoEntrega]}
-                        onPress={() => abrirEntrega(stop)}
-                        disabled={!stop.orcamentoId}
-                      >
-                        <Text style={styles.botaoAcaoText}>Entregue</Text>
-                      </TouchableOpacity>
-                    )}
+                    {!ehFixo &&
+                      (ehColeta ? (
+                        <TouchableOpacity
+                          style={[styles.botaoAcao, styles.botaoColeta]}
+                          onPress={() => abrirColeta(stop)}
+                          disabled={!stop.orcamentoId}
+                        >
+                          <Text style={styles.botaoAcaoText}>Coletar</Text>
+                        </TouchableOpacity>
+                      ) : (
+                        <TouchableOpacity
+                          style={[styles.botaoAcao, styles.botaoEntrega]}
+                          onPress={() => abrirEntrega(stop)}
+                          disabled={!stop.orcamentoId}
+                        >
+                          <Text style={styles.botaoAcaoText}>Entregue</Text>
+                        </TouchableOpacity>
+                      ))}
                   </View>
                 )}
               </TouchableOpacity>
@@ -570,12 +596,16 @@ export default function RotaDoDiaScreen() {
         </View>
       </Modal>
 
-      {/* ⏱️ Re-otimizar (horário de saída — mesmo fluxo do painel admin) */}
-      <Modal visible={mostrarReotimizar} transparent animationType="slide">
+      {/* ⏱️ Horário de saída — usado pelo Gerar Rota e pelo Re-otimizar (fluxo do painel admin) */}
+      <Modal visible={mostrarHorarioSaida} transparent animationType="slide">
         <View style={styles.modalWrap}>
           <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>⏱️ Re-otimizar Rota</Text>
-            <Text style={styles.modalStop}>Informe o horário de saída da lavanderia:</Text>
+            <Text style={styles.modalTitle}>⏱️ Horário de Saída</Text>
+            <Text style={styles.modalStop}>
+              {rota
+                ? 'Informe o horário de saída da lavanderia para re-otimizar a rota:'
+                : 'Informe o horário de saída da lavanderia (início da rota):'}
+            </Text>
             <TextInput
               style={styles.obsInput}
               placeholder="HH:MM (ex.: 08:00)"
@@ -586,18 +616,18 @@ export default function RotaDoDiaScreen() {
               maxLength={5}
             />
             <View style={styles.modalBotoes}>
-              <TouchableOpacity style={styles.botaoCancelar} onPress={() => setMostrarReotimizar(false)} disabled={gerando}>
+              <TouchableOpacity style={styles.botaoCancelar} onPress={() => setMostrarHorarioSaida(false)} disabled={gerando}>
                 <Text style={styles.botaoCancelarText}>Cancelar</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.botaoConfirmar, gerando && styles.botaoDisabled]}
-                onPress={() => void reotimizar()}
+                onPress={() => (rota ? void reotimizar() : void gerarRota())}
                 disabled={gerando}
               >
                 {gerando ? (
                   <ActivityIndicator color="#fff" />
                 ) : (
-                  <Text style={styles.botaoConfirmarText}>Gerar Rota</Text>
+                  <Text style={styles.botaoConfirmarText}>{rota ? 'Re-otimizar' : 'Gerar Rota'}</Text>
                 )}
               </TouchableOpacity>
             </View>
@@ -715,7 +745,8 @@ const styles = StyleSheet.create({
   check: { color: '#fff', fontWeight: 'bold', fontSize: 14 },
   paradaInfo: { flex: 1 },
   paradaTipo: { fontSize: 11, fontWeight: 'bold' },
-  paradaEndereco: { color: colors.text, fontSize: 13, marginTop: 3, lineHeight: 18 },
+  paradaEndereco: { color: colors.textSecondary, fontSize: 12, marginTop: 2, lineHeight: 17 },
+  paradaComplemento: { color: colors.textSecondary, fontSize: 12, marginTop: 2, fontWeight: '600' },
   paradaCliente: { color: colors.text, fontSize: 14, fontWeight: 'bold', marginTop: 3 },
   acoes: { flexDirection: 'row', gap: 8, marginTop: 10 },
   botaoMaps: {

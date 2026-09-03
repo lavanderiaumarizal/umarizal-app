@@ -66,7 +66,9 @@ export default function AlmoxarifadoScreen() {
   const [status, setStatus] = useState('');
   const [periodo, setPeriodo] = useState('');
   const [tipo, setTipo] = useState('');
-  const [data, setData] = useState(() => new Date());
+  // Filtro de data OPCIONAL ("off" = sem filtro de dia). Antes, `data=hoje`
+  // era sempre enviado e esmagava os filtros de status do backend.
+  const [data, setData] = useState<Date | null>(null);
 
   const [tapetes, setTapetes] = useState<TapeteAlmoxarifado[]>([]);
   const [loading, setLoading] = useState(true);
@@ -83,7 +85,7 @@ export default function AlmoxarifadoScreen() {
         status: status || undefined,
         periodo: periodo || undefined,
         tipo: tipo || undefined,
-        data: fmtDataISO(data),
+        data: data ? fmtDataISO(data) : undefined,
       });
       setTapetes(lista);
     } catch {
@@ -167,21 +169,25 @@ export default function AlmoxarifadoScreen() {
         </ScrollView>
       </View>
 
-      {/* Data da rota (o que carregar na kombi no dia) */}
+      {/* Data da rota (o que carregar na kombi no dia) — filtro opcional */}
       <View style={styles.dataRow}>
         <TouchableOpacity
           style={styles.dataBtn}
-          onPress={() => setData(new Date(data.getTime() - 86400000))}
+          onPress={() => setData((p) => (p ? new Date(p.getTime() - 86400000) : new Date()))}
         >
           <Text style={styles.dataBtnText}>◀</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.dataCentro} onPress={() => setData(new Date())}>
+        <TouchableOpacity
+          style={styles.dataCentro}
+          onPress={() => setData((p) => (p ? null : new Date()))}
+        >
           <Text style={styles.dataTitulo}>🚚 Carregar no dia</Text>
-          <Text style={styles.dataTexto}>{fmtDataBR(data)}</Text>
+          <Text style={styles.dataTexto}>{data ? fmtDataBR(data) : 'Off (todos os dias)'}</Text>
+          <Text style={styles.dataDica}>{data ? 'Toque para desativar' : 'Toque para ativar'}</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.dataBtn}
-          onPress={() => setData(new Date(data.getTime() + 86400000))}
+          onPress={() => setData((p) => (p ? new Date(p.getTime() + 86400000) : new Date()))}
         >
           <Text style={styles.dataBtnText}>▶</Text>
         </TouchableOpacity>
@@ -303,6 +309,7 @@ const styles = StyleSheet.create({
   dataCentro: { alignItems: 'center' },
   dataTitulo: { color: colors.active, fontSize: 11, fontWeight: 'bold' },
   dataTexto: { color: colors.text, fontSize: 14, fontWeight: 'bold', marginTop: 2 },
+  dataDica: { color: colors.textMuted, fontSize: 9, marginTop: 1 },
   chip: {
     backgroundColor: colors.surface,
     borderWidth: 1,
