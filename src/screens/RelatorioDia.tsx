@@ -39,6 +39,15 @@ function fmtMoeda(v?: number): string {
   return `R$ ${v.toFixed(2).replace('.', ',')}`;
 }
 
+/** Duração em minutos → "2h 30min" / "45min" */
+function fmtDuracao(min?: number | null): string {
+  const total = Math.round(min ?? 0);
+  if (total <= 0) return '0min';
+  const h = Math.floor(total / 60);
+  const m = total % 60;
+  return h > 0 ? `${h}h${m > 0 ? ` ${m}min` : ''}` : `${m}min`;
+}
+
 export default function RelatorioDiaScreen() {
   const user = useAuthStore((s) => s.user);
   const ehAdmin = (user?.perfis ?? []).includes('admin');
@@ -174,6 +183,32 @@ export default function RelatorioDiaScreen() {
         )}
       </View>
 
+      {/* Rota do dia (fix — dado que o motorista reconhece) */}
+      {relatorio.rota?.existe ? (
+        <View style={styles.rotaBox}>
+          <Text style={styles.rotaTitulo}>🚚 Rota do dia</Text>
+          <Text style={styles.rotaLinha}>
+            ✅ {relatorio.rota.paradasConcluidas} de {relatorio.rota.totalParadas} paradas concluídas
+          </Text>
+          {(relatorio.rota.coletasPendentes > 0 || relatorio.rota.entregasPendentes > 0) && (
+            <Text style={styles.rotaLinha}>
+              ⏳ Pendentes: {relatorio.rota.coletasPendentes} coletas ·{' '}
+              {relatorio.rota.entregasPendentes} entregas
+            </Text>
+          )}
+          {(relatorio.rota.horarioSaida || relatorio.rota.previsaoRetorno) && (
+            <Text style={styles.rotaLinha}>
+              🕐 Saída {relatorio.rota.horarioSaida ?? '––:––'} · Retorno previsto{' '}
+              {relatorio.rota.previsaoRetorno ?? '––:––'}
+            </Text>
+          )}
+          <Text style={styles.rotaLinha}>
+            🛣️ {relatorio.rota.distanciaKm ?? 0} km · duração prevista{' '}
+            {fmtDuracao(relatorio.rota.duracaoMin)}
+          </Text>
+        </View>
+      ) : null}
+
       {/* Por tipo de serviço */}
       <Text style={styles.secao}>🧺 Por tipo de serviço</Text>
       <View style={styles.card}>
@@ -263,6 +298,16 @@ const styles = StyleSheet.create({
   },
   agendadasText: { color: colors.active, fontSize: 13, fontWeight: 'bold' },
   agendadasHint: { color: colors.textMuted, fontSize: 11, marginTop: 4 },
+  rotaBox: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.success,
+    borderRadius: 10,
+    padding: 12,
+    marginTop: 12,
+  },
+  rotaTitulo: { color: colors.text, fontSize: 14, fontWeight: 'bold', marginBottom: 4 },
+  rotaLinha: { color: colors.textSecondary, fontSize: 13, marginTop: 2 },
   secao: { color: colors.text, fontSize: 15, fontWeight: 'bold', marginTop: 20, marginBottom: 8 },
   vazio: { color: colors.textMuted, fontSize: 13, paddingVertical: 8 },
   linha: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: colors.border },

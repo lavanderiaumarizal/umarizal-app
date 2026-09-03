@@ -30,6 +30,7 @@ import { useAuthStore } from '../store/authStore';
 import { useAppStore } from '../store/appStore';
 import { minhasColetas, minhasEntregas } from '../api/orcamentos';
 import { getRotaDoDia } from '../api/routexl';
+import { kanbanPorPerfil } from '../api/kanban';
 import { getPrevisao, type PrevisaoDia } from '../api/weather';
 import DashboardCard from '../components/DashboardCard';
 import type { Perfil } from '../types';
@@ -63,6 +64,11 @@ function fmtDiaCurto(iso: string): string {
   return d && m ? `${d}/${m}` : iso;
 }
 
+/** Data local no formato YYYY-MM-DD */
+function fmtDataISO(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 interface CardDef {
   icon: string;
   title: string;
@@ -72,16 +78,26 @@ interface CardDef {
   onPress?: () => void;
 }
 
+/** Contagens do kanban do perfil (fix 9 — números reais, não "—") */
+interface DadosKanban {
+  pendente: number;
+  agora: number;
+  concluida: number;
+}
+
 /** Cards por perfil — doc 3_TELAS */
 function cardsDoPerfil(
   perfil: Perfil,
   dados: { coletas: number | null; entregas: number | null },
   dadosRota?: { total: number; concluidos: number } | null,
+  dadosKanban?: DadosKanban | null,
+  etapasExp?: Record<number, number> | null,
   onAbrirRota?: () => void,
   onAbrirProducao?: () => void,
   onAbrirColetas?: () => void,
   onAbrirEntregas?: () => void,
   onAbrirResumo?: () => void,
+  onAbrirKanban?: () => void,
 ): CardDef[] {
   switch (perfil) {
     case 'motorista':
@@ -96,17 +112,17 @@ function cardsDoPerfil(
         },
         {
           icon: '📦',
-          title: 'Coletas Pendentes',
+          title: 'Coletas de Hoje',
           value: dados.coletas,
-          subtitle: 'Atribuídas a você · tocar para ver',
+          subtitle: 'Agendadas para hoje · tocar para ver',
           accent: colors.brandLime,
           onPress: onAbrirColetas,
         },
         {
           icon: '📦',
-          title: 'Entregas Pendentes',
+          title: 'Entregas de Hoje',
           value: dados.entregas,
-          subtitle: 'Atribuídas a você · tocar para ver',
+          subtitle: 'Agendadas para hoje · tocar para ver',
           accent: colors.brandGold,
           onPress: onAbrirEntregas,
         },
@@ -120,28 +136,28 @@ function cardsDoPerfil(
       ];
     case 'lavagem':
       return [
-        { icon: '🧼', title: 'Na Fila de Lavagem', value: null, subtitle: 'Tocar para abrir', accent: colors.primary, onPress: onAbrirProducao },
-        { icon: '🫧', title: 'Lavando Agora', value: null, subtitle: 'Tocar para abrir', accent: colors.info, onPress: onAbrirProducao },
-        { icon: '✅', title: 'Finalizados Hoje', value: null, subtitle: 'Aguardando kanban (B18)', accent: colors.success },
+        { icon: '🧼', title: 'Na Fila de Lavagem', value: dadosKanban?.pendente ?? null, subtitle: 'Etapas 4–6 · tocar para abrir', accent: colors.primary, onPress: onAbrirProducao },
+        { icon: '🫧', title: 'Lavando Agora', value: dadosKanban?.agora ?? null, subtitle: 'Em andamento · tocar para abrir', accent: colors.info, onPress: onAbrirProducao },
+        { icon: '✅', title: 'Finalizados', value: dadosKanban?.concluida ?? null, subtitle: 'Etapas 4–6 concluídas', accent: colors.success },
       ];
     case 'secagem':
       return [
-        { icon: '☀️', title: 'Na Fila de Secagem', value: null, subtitle: 'Tocar para abrir', accent: colors.primary, onPress: onAbrirProducao },
-        { icon: '🌬️', title: 'Secando Agora', value: null, subtitle: 'Tocar para abrir', accent: colors.brandGold, onPress: onAbrirProducao },
-        { icon: '✅', title: 'Finalizados Hoje', value: null, subtitle: 'Aguardando kanban (B18)', accent: colors.success },
+        { icon: '☀️', title: 'Na Fila de Secagem', value: dadosKanban?.pendente ?? null, subtitle: 'Etapas 7–9 · tocar para abrir', accent: colors.primary, onPress: onAbrirProducao },
+        { icon: '🌬️', title: 'Secando Agora', value: dadosKanban?.agora ?? null, subtitle: 'Em andamento · tocar para abrir', accent: colors.brandGold, onPress: onAbrirProducao },
+        { icon: '✅', title: 'Finalizados', value: dadosKanban?.concluida ?? null, subtitle: 'Etapas 7–9 concluídas', accent: colors.success },
       ];
     case 'expedicao':
       return [
-        { icon: '📋', title: 'Documentação Pendente', value: null, subtitle: 'Etapa 2 · Aguardando B18', accent: colors.primary },
-        { icon: '🔄', title: 'Aspiração Pendente', value: null, subtitle: 'Etapa 3 · Aguardando B18', accent: colors.info },
-        { icon: '🔍', title: 'Inspeção Pendente', value: null, subtitle: 'Etapa 10 · Aguardando B18', accent: colors.brandGold },
-        { icon: '📦', title: 'Embalagem Pendente', value: null, subtitle: 'Etapa 11 · Aguardando B18', accent: colors.brandLime },
+        { icon: '📋', title: 'Documentação', value: etapasExp?.[2] ?? null, subtitle: 'Etapa 2 · tocar para abrir', accent: colors.primary, onPress: onAbrirProducao },
+        { icon: '🔄', title: 'Aspiração', value: etapasExp?.[3] ?? null, subtitle: 'Etapa 3 · tocar para abrir', accent: colors.info, onPress: onAbrirProducao },
+        { icon: '🔍', title: 'Inspeção', value: etapasExp?.[10] ?? null, subtitle: 'Etapa 10 · tocar para abrir', accent: colors.brandGold, onPress: onAbrirProducao },
+        { icon: '📦', title: 'Embalagem', value: etapasExp?.[11] ?? null, subtitle: 'Etapa 11 · tocar para abrir', accent: colors.brandLime, onPress: onAbrirProducao },
       ];
     case 'admin':
       return [
         { icon: '📊', title: 'Resumo Geral', value: null, subtitle: 'Orçamentos e conversão · tocar para abrir', accent: colors.primary, onPress: onAbrirResumo },
         { icon: '💰', title: 'Financeiro', value: null, subtitle: 'Faturamento e ticket · tocar para abrir', accent: colors.brandGold, onPress: onAbrirResumo },
-        { icon: '👥', title: 'Todos os Perfis', value: null, subtitle: 'Aguardando kanban (B18)', accent: colors.brandPink },
+        { icon: '👥', title: 'Todos os Perfis', value: null, subtitle: 'Kanban completo · tocar para abrir', accent: colors.brandPink, onPress: onAbrirKanban },
       ];
   }
 }
@@ -162,24 +178,50 @@ export default function DashboardScreen() {
     entregas: null,
   });
   const [rotaHoje, setRotaHoje] = useState<{ total: number; concluidos: number } | null>(null);
+  const [dadosKanban, setDadosKanban] = useState<DadosKanban | null>(null);
+  const [etapasExp, setEtapasExp] = useState<Record<number, number> | null>(null);
   const [previsao, setPrevisao] = useState<PrevisaoDia[]>([]);
   const [diaPrevisao, setDiaPrevisao] = useState<PrevisaoDia | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
   const carregarDados = useCallback(async () => {
-    const ehMotorista = perfis.includes('motorista');
-    if (!ehMotorista) {
-      setDados({ coletas: null, entregas: null });
-      return;
-    }
+    // Fix 9 — números do DIA (hoje), nunca o futuro: coletas/entregas passam
+    // data=hoje para o backend
+    const hoje = fmtDataISO(new Date());
     try {
-      const [c, e] = await Promise.all([minhasColetas(), minhasEntregas()]);
-      setDados({
-        coletas: c.data?.total ?? 0,
-        entregas: e.data?.total ?? 0,
-      });
+      if (perfis.includes('motorista')) {
+        const [c, e] = await Promise.all([minhasColetas(hoje), minhasEntregas(hoje)]);
+        setDados({ coletas: c.data?.total ?? 0, entregas: e.data?.total ?? 0 });
+      } else {
+        setDados({ coletas: null, entregas: null });
+      }
+      // Demais perfis operacionais: alimentam os cards com o kanban real
+      const perfilOperacional = perfis.find((p) => ['lavagem', 'secagem', 'expedicao'].includes(p));
+      if (perfilOperacional) {
+        const res = await kanbanPorPerfil(perfilOperacional as Perfil);
+        const colunas = res.data?.colunas;
+        if (colunas) {
+          setDadosKanban({
+            pendente: colunas.pendente?.length ?? 0,
+            agora: colunas.em_andamento?.length ?? 0,
+            concluida: colunas.concluida?.length ?? 0,
+          });
+          if (perfilOperacional === 'expedicao') {
+            const porEtapa: Record<number, number> = {};
+            for (const item of [...(colunas.pendente ?? []), ...(colunas.em_andamento ?? [])]) {
+              const etapa = item.etapaAtual;
+              if (etapa) porEtapa[etapa] = (porEtapa[etapa] ?? 0) + 1;
+            }
+            setEtapasExp(porEtapa);
+          }
+        }
+      } else {
+        setDadosKanban(null);
+        setEtapasExp(null);
+      }
     } catch {
-      setDados({ coletas: null, entregas: null });
+      if (perfis.includes('motorista')) setDados({ coletas: null, entregas: null });
+      setDadosKanban(null);
     }
   }, [perfis]);
 
@@ -189,9 +231,7 @@ export default function DashboardScreen() {
 
   const carregarRotaHoje = useCallback(async () => {
     try {
-      const hoje = new Date();
-      const iso = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
-      const r = await getRotaDoDia(iso);
+      const r = await getRotaDoDia(fmtDataISO(new Date()));
       if (r) {
         setRotaHoje({ total: r.stops.length, concluidos: r.stops.filter((s) => s.concluido).length });
       } else {
@@ -226,11 +266,14 @@ export default function DashboardScreen() {
     perfil,
     dados,
     rotaHoje,
+    dadosKanban,
+    etapasExp,
     () => navigation.navigate('RotaDoDia'),
     () => navigation.navigate('Producao', { perfil }),
     () => navigation.navigate('MinhasColetas', { tipo: 'coleta' }),
     () => navigation.navigate('MinhasColetas', { tipo: 'entrega' }),
     () => navigation.navigate('AdminResumo'),
+    () => navigation.navigate('Kanban', { perfil }),
   );
 
   return (
@@ -309,7 +352,7 @@ export default function DashboardScreen() {
 
       {/* Modal com os detalhes da previsão de um dia */}
       <Modal visible={diaPrevisao !== null} transparent animationType="slide" onRequestClose={() => setDiaPrevisao(null)}>
-        <View style={styles.modalWrap}>
+        <View style={[styles.modalWrap, { paddingBottom: insets.bottom + 8 }]}>
           <View style={styles.modalCard}>
             {diaPrevisao && (
               <>
@@ -631,7 +674,8 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 14,
   },
-  // Modal de detalhes da previsão do tempo
+  // Modal de detalhes da previsão do tempo (fix 1 — respeita a barra de
+  // navegação do Android: paddingBottom vem da safe area, não é fixo)
   modalWrap: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.6)',
@@ -642,7 +686,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 20,
-    paddingBottom: 32,
+    paddingBottom: 16,
   },
   modalTitle: {
     color: colors.text,

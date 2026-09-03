@@ -47,20 +47,20 @@ export interface OrcamentoResumo {
   itens: ItemResumo[];
 }
 
-/** GET /api/orcamentos/minhas-coletas (B13) */
-export async function minhasColetas(): Promise<
+/** GET /api/orcamentos/minhas-coletas?data=YYYY-MM-DD (B13 — data opcional) */
+export async function minhasColetas(data?: string): Promise<
   ApiSuccessResponse<{ transportador: { id: number; nome: string; placaVeiculo: string | null } | null; total: number; coletas: OrcamentoResumo[] }>
 > {
-  const { data } = await api.get('/orcamentos/minhas-coletas');
-  return data;
+  const { data: res } = await api.get('/orcamentos/minhas-coletas', { params: data ? { data } : undefined });
+  return res;
 }
 
-/** GET /api/orcamentos/minhas-entregas (B14) */
-export async function minhasEntregas(): Promise<
+/** GET /api/orcamentos/minhas-entregas?data=YYYY-MM-DD (B14 — data opcional) */
+export async function minhasEntregas(data?: string): Promise<
   ApiSuccessResponse<{ transportador: { id: number; nome: string; placaVeiculo: string | null } | null; total: number; entregas: OrcamentoResumo[] }>
 > {
-  const { data } = await api.get('/orcamentos/minhas-entregas');
-  return data;
+  const { data: res } = await api.get('/orcamentos/minhas-entregas', { params: data ? { data } : undefined });
+  return res;
 }
 
 /** Foto do estado inicial (formato do backend — fotos.controller) */

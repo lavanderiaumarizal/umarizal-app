@@ -26,10 +26,10 @@ export interface KanbanResponse {
   total: number;
 }
 
-/** GET /api/kanban/:perfil (B18) */
-export async function kanbanPorPerfil(perfil: Perfil): Promise<ApiSuccessResponse<KanbanResponse>> {
-  const { data } = await api.get(`/kanban/${perfil}`);
-  return data;
+/** GET /api/kanban/:perfil?data=YYYY-MM-DD (B18 — data opcional, âncora por fase) */
+export async function kanbanPorPerfil(perfil: Perfil, data?: string): Promise<ApiSuccessResponse<KanbanResponse>> {
+  const { data: res } = await api.get(`/kanban/${perfil}`, { params: data ? { data } : undefined });
+  return res;
 }
 
 /** Rótulos das 12 etapas */

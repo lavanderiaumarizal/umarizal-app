@@ -55,6 +55,18 @@ function fmtDataBR(iso: string): string {
   return `${d}/${m}/${y}`;
 }
 
+/** Duração em minutos → "2h 30min" / "45min" (fix 3 — tempo em horas) */
+function fmtDuracao(min?: number | null): string {
+  const total = Math.round(min ?? 0);
+  if (total <= 0) return '0min';
+  const h = Math.floor(total / 60);
+  const m = total % 60;
+  return h > 0 ? `${h}h${m > 0 ? ` ${m}min` : ''}` : `${m}min`;
+}
+
+/** Horários sugeridos no modal interativo (sem teclado — fix 2) */
+const HORARIOS_SUGERIDOS = ['06:00', '06:30', '07:00', '07:30', '08:00', '08:30', '09:00', '13:00'];
+
 type AcaoModal =
   | { tipo: 'coleta'; stop: Stop }
   | { tipo: 'entrega'; stop: Stop }
@@ -85,12 +97,18 @@ export default function RotaDoDiaScreen() {
   function stopsDaRota(paradas: Stop[]) {
     return paradas.map((s) => {
       const logradouro = s.endereco?.logradouro ?? '';
-      const [codigo = '', ...resto] = logradouro.split(' - ');
+      // Remove o prefixo "CODIGO - " apenas quando o logradouro começa com ele.
+      // Paradas FIXO agora chegam com o endereço REAL (sem prefixo) — o código
+      // volta do campo codigo (ex.: "FIXO-Qualimais"), como no gerar original.
+      const prefixo = s.codigo ? `${s.codigo} - ` : '';
+      const endereco = prefixo && logradouro.startsWith(prefixo)
+        ? logradouro.slice(prefixo.length)
+        : logradouro;
       return {
         orcamentoId: s.orcamentoId,
         tipo: s.tipo,
-        endereco: resto.join(' - ') || logradouro,
-        codigo: codigo || s.orcamentoId,
+        endereco,
+        codigo: s.codigo || s.orcamentoId || '',
         servicetime: s.tempoServicoMinutos ?? 20,
       };
     });
@@ -207,17 +225,7 @@ export default function RotaDoDiaScreen() {
         })),
         rawResponse: {},
       };
-      const stops = rota.stops.map((s) => {
-        const logradouro = s.endereco?.logradouro ?? '';
-        const [codigo = '', ...resto] = logradouro.split(' - ');
-        return {
-          orcamentoId: s.orcamentoId,
-          tipo: s.tipo,
-          endereco: resto.join(' - ') || logradouro,
-          codigo: codigo || s.orcamentoId,
-          servicetime: s.tempoServicoMinutos ?? 20,
-        };
-      });
+      const stops = stopsDaRota(rota.stops);
       await saveRota(fmtData(data), otimizada, stops);
     } catch {
       setErro('Não foi possível salvar a rota.');
@@ -251,11 +259,25 @@ export default function RotaDoDiaScreen() {
     }
   }
 
-  /** Abre o Google Maps na parada (endereço sem o prefixo do código) */
+  /** Abre o Google Maps na parada (endereço sem o prefixo do código).
+   *  Paradas FIXO: o backend já envia o endereço REAL do cadastro — nunca
+   *  "FIXO-Nome" (fix 4). */
   function navegarParada(stop: Stop) {
-    const endereco = limparEndereco(stop.endereco?.logradouro ?? '');
+    const logradouro = stop.endereco?.logradouro ?? '';
+    const ehFixo = (stop.orcamentoId ?? '').startsWith('fixo-');
+    const endereco = ehFixo ? logradouro : limparEndereco(logradouro);
     const url = `https://maps.google.com/?daddr=${encodeURIComponent(endereco)}`;
     void Linking.openURL(url).catch(() => undefined);
+  }
+
+  /** Ajusta o horário de saída em minutos (steppers do modal interativo — fix 2) */
+  function ajustarHorario(delta: number) {
+    const m = horarioSaida.match(/^(\d{1,2}):(\d{2})$/);
+    const atual = m ? parseInt(m[1], 10) * 60 + parseInt(m[2], 10) : 8 * 60;
+    const novo = Math.min(23 * 60 + 45, Math.max(0, atual + delta));
+    setHorarioSaida(
+      `${String(Math.floor(novo / 60)).padStart(2, '0')}:${String(novo % 60).padStart(2, '0')}`,
+    );
   }
 
   /** Fluxos de ação (coleta B9 / entrega B10) — sem assinatura: o login é a assinatura */
@@ -355,10 +377,25 @@ export default function RotaDoDiaScreen() {
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
           }
         >
-          <Text style={styles.resumo}>
-            {rota.stops.length} paradas · {rota.totalDistanceKm ?? 0} km ·{' '}
-            {rota.totalDurationMinutes ?? 0} min
-          </Text>
+          {/* Fix 3 — tempo em horas + saída/retorno (DEPOTs da rota) */}
+          {(() => {
+            const depots = rota.allWaypoints.filter((w) => w.tipo === 'DEPOT');
+            const saida = depots[0]?.horarioChegada ?? null;
+            const retorno = depots.length > 1 ? (depots[depots.length - 1]?.horarioChegada ?? null) : null;
+            return (
+              <>
+                <Text style={styles.resumo}>
+                  {rota.stops.length} paradas · {rota.totalDistanceKm ?? 0} km ·{' '}
+                  {fmtDuracao(rota.totalDurationMinutes)}
+                </Text>
+                {(saida || retorno) && (
+                  <Text style={styles.resumoHorarios}>
+                    🕐 Saída {saida ?? '––:––'} · retorno previsto {retorno ?? '––:––'}
+                  </Text>
+                )}
+              </>
+            );
+          })()}
 
           <TouchableOpacity style={styles.botaoMapa} onPress={() => setMostrarMapa(true)}>
             <Text style={styles.botaoMapaText}>🗺️ Ver Mapa da Rota</Text>
@@ -471,7 +508,7 @@ export default function RotaDoDiaScreen() {
           Modal de COLETA: câmera opcional → confirma (o login é a assinatura)
       ============================================================ */}
       <Modal visible={acao?.tipo === 'coleta' && !mostrarCamera} transparent animationType="slide">
-        <View style={styles.modalWrap}>
+        <View style={[styles.modalWrap, { paddingBottom: insets.bottom + 8 }]}>
           <View style={styles.modalCard}>
             <Text style={styles.modalTitle}>📦 Confirmar Coleta</Text>
             <Text style={styles.modalStop}>{limparEndereco(acao?.stop.endereco?.logradouro ?? '')}</Text>
@@ -535,7 +572,7 @@ export default function RotaDoDiaScreen() {
           Modal de ENTREGA: câmera opcional → confirma (o login é a assinatura)
       ============================================================ */}
       <Modal visible={acao?.tipo === 'entrega' && !mostrarCamera} transparent animationType="slide">
-        <View style={styles.modalWrap}>
+        <View style={[styles.modalWrap, { paddingBottom: insets.bottom + 8 }]}>
           <View style={styles.modalCard}>
             <Text style={styles.modalTitle}>🚚 Confirmar Entrega</Text>
             <Text style={styles.modalStop}>{limparEndereco(acao?.stop.endereco?.logradouro ?? '')}</Text>
@@ -585,7 +622,7 @@ export default function RotaDoDiaScreen() {
       </Modal>
       {/* Mapa da rota (F14.1) */}
       <Modal visible={mostrarMapa} animationType="slide" onRequestClose={() => setMostrarMapa(false)}>
-        <View style={styles.mapaWrap}>
+        <View style={[styles.mapaWrap, { paddingBottom: insets.bottom }]}>
           <View style={styles.mapaHeader}>
             <Text style={styles.mapaTitulo}>🗺️ Rota do Dia</Text>
             <TouchableOpacity onPress={() => setMostrarMapa(false)}>
@@ -596,25 +633,55 @@ export default function RotaDoDiaScreen() {
         </View>
       </Modal>
 
-      {/* ⏱️ Horário de saída — usado pelo Gerar Rota e pelo Re-otimizar (fluxo do painel admin) */}
-      <Modal visible={mostrarHorarioSaida} transparent animationType="slide">
-        <View style={styles.modalWrap}>
+      {/* ⏱️ Horário de saída — modal interativo (chips + steppers, sem teclado — fix 2).
+          Usado pelo Gerar Rota e pelo Re-otimizar (fluxo do painel admin) */}
+      <Modal
+        visible={mostrarHorarioSaida}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setMostrarHorarioSaida(false)}
+      >
+        <View style={[styles.modalWrap, { paddingBottom: insets.bottom + 8 }]}>
           <View style={styles.modalCard}>
             <Text style={styles.modalTitle}>⏱️ Horário de Saída</Text>
             <Text style={styles.modalStop}>
               {rota
-                ? 'Informe o horário de saída da lavanderia para re-otimizar a rota:'
-                : 'Informe o horário de saída da lavanderia (início da rota):'}
+                ? 'Ajuste o horário de saída da lavanderia para re-otimizar a rota:'
+                : 'Ajuste o horário de saída da lavanderia (início da rota):'}
             </Text>
-            <TextInput
-              style={styles.obsInput}
-              placeholder="HH:MM (ex.: 08:00)"
-              placeholderTextColor={colors.textMuted}
-              value={horarioSaida}
-              onChangeText={setHorarioSaida}
-              keyboardType="numbers-and-punctuation"
-              maxLength={5}
-            />
+
+            <Text style={styles.horarioDisplay}>{horarioSaida}</Text>
+
+            {/* Steppers — ajuste fino sem teclado */}
+            <View style={styles.stepperRow}>
+              <TouchableOpacity style={styles.stepperBtn} onPress={() => ajustarHorario(-60)} disabled={gerando}>
+                <Text style={styles.stepperText}>−1h</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.stepperBtn} onPress={() => ajustarHorario(-15)} disabled={gerando}>
+                <Text style={styles.stepperText}>−15min</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.stepperBtn} onPress={() => ajustarHorario(15)} disabled={gerando}>
+                <Text style={styles.stepperText}>+15min</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.stepperBtn} onPress={() => ajustarHorario(60)} disabled={gerando}>
+                <Text style={styles.stepperText}>+1h</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Chips de horários sugeridos */}
+            <View style={styles.horarioChipsRow}>
+              {HORARIOS_SUGERIDOS.map((h) => (
+                <TouchableOpacity
+                  key={h}
+                  style={[styles.horarioChip, horarioSaida === h && styles.horarioChipOn]}
+                  onPress={() => setHorarioSaida(h)}
+                  disabled={gerando}
+                >
+                  <Text style={[styles.horarioChipText, horarioSaida === h && styles.horarioChipTextOn]}>{h}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
             <View style={styles.modalBotoes}>
               <TouchableOpacity style={styles.botaoCancelar} onPress={() => setMostrarHorarioSaida(false)} disabled={gerando}>
                 <Text style={styles.botaoCancelarText}>Cancelar</Text>
@@ -667,7 +734,8 @@ const styles = StyleSheet.create({
   },
   botaoPrimarioText: { color: '#fff', fontWeight: 'bold', fontSize: 14 },
   lista: { padding: 12, paddingBottom: 32 },
-  resumo: { color: colors.textSecondary, fontSize: 12, marginBottom: 10 },
+  resumo: { color: colors.textSecondary, fontSize: 12, marginBottom: 4 },
+  resumoHorarios: { color: colors.textSecondary, fontSize: 12, fontWeight: '600', marginBottom: 10 },
   botaoMapa: {
     backgroundColor: colors.surface,
     borderWidth: 1,
@@ -801,6 +869,36 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
     fontSize: 13,
   },
+  horarioDisplay: {
+    color: colors.text,
+    fontSize: 40,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginVertical: 12,
+  },
+  stepperRow: { flexDirection: 'row', gap: 8 },
+  stepperBtn: {
+    flex: 1,
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    borderRadius: 10,
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  stepperText: { color: colors.active, fontWeight: 'bold', fontSize: 13 },
+  horarioChipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
+  horarioChip: {
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 18,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  horarioChipOn: { backgroundColor: colors.activeBg, borderColor: colors.primary },
+  horarioChipText: { color: colors.textSecondary, fontSize: 13, fontWeight: '600' },
+  horarioChipTextOn: { color: colors.active, fontWeight: 'bold' },
   modalBotoes: { flexDirection: 'row', gap: 10, marginTop: 12 },
   botaoCancelar: {
     flex: 1,

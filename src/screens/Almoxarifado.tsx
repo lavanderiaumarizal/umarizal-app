@@ -1,9 +1,10 @@
 /**
  * screens/Almoxarifado.tsx — Almoxarifado/Estoque (F26) + Flag de Carregamento (F27)
  *
- * Substitui a planilha manual de entrada/saída de tapetes.
- * - Busca textual + filtros (status, período, tipo)
- * - Cards: código, cliente, medidas+tipo, datas de coleta/entrega
+ * Substitui a "prancheta de baixa": mostra o que carregar na kombi no dia
+ * ANTERIOR à entrega (carregamento sempre no fim da tarde da véspera).
+ * - Data OBRIGATÓRIA, padrão AMANHÃ (dia da entrega)
+ * - Chips: Para carregar | Carregados | Entregues
  * - Checkbox "CARREGAR" → POST/DELETE /api/orcamentos/:id/carregar (B11/B12)
  * - SEM preços (regra do doc 6)
  */
@@ -24,24 +25,9 @@ import { colors, primaryGradient } from '../theme';
 import { getAlmoxarifado, carregarOrcamento, descarregarOrcamento, type TapeteAlmoxarifado } from '../api/orcamentos';
 
 const STATUS_OPCOES = [
-  { key: '', label: 'Todos' },
-  { key: 'coletado', label: 'Coletados' },
+  { key: 'pendente', label: 'Para carregar' },
   { key: 'carregado', label: 'Carregados' },
   { key: 'entregue', label: 'Entregues' },
-];
-
-const PERIODO_OPCOES = [
-  { key: '', label: 'Todo período' },
-  { key: 'hoje', label: 'Hoje' },
-  { key: 'semana', label: 'Semana' },
-  { key: 'mes', label: 'Mês' },
-];
-
-const TIPO_OPCOES = [
-  { key: '', label: 'Todos tipos' },
-  { key: 'Tapete', label: 'Tapetes' },
-  { key: 'Enxoval', label: 'Enxoval' },
-  { key: 'Outros', label: 'Outros' },
 ];
 
 function fmtData(iso?: string | null): string {
@@ -60,15 +46,18 @@ function fmtDataBR(d: Date): string {
   return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
+/** Amanhã — dia da entrega cujos tapetes são carregados na véspera (fix 5) */
+function amanha(): Date {
+  return new Date(new Date().getTime() + 86400000);
+}
+
 export default function AlmoxarifadoScreen() {
   const insets = useSafeAreaInsets();
   const [busca, setBusca] = useState('');
-  const [status, setStatus] = useState('');
-  const [periodo, setPeriodo] = useState('');
-  const [tipo, setTipo] = useState('');
-  // Filtro de data OPCIONAL ("off" = sem filtro de dia). Antes, `data=hoje`
-  // era sempre enviado e esmagava os filtros de status do backend.
-  const [data, setData] = useState<Date | null>(null);
+  // Fix 5 — "prancheta de baixa": SEMPRE por dia da entrega (padrão amanhã).
+  // status "pendente" = ainda não carregado na kombi.
+  const [status, setStatus] = useState('pendente');
+  const [data, setData] = useState<Date>(() => amanha());
 
   const [tapetes, setTapetes] = useState<TapeteAlmoxarifado[]>([]);
   const [loading, setLoading] = useState(true);
@@ -83,9 +72,7 @@ export default function AlmoxarifadoScreen() {
       const lista = await getAlmoxarifado({
         q: buscaAtual || undefined,
         status: status || undefined,
-        periodo: periodo || undefined,
-        tipo: tipo || undefined,
-        data: data ? fmtDataISO(data) : undefined,
+        data: fmtDataISO(data),
       });
       setTapetes(lista);
     } catch {
@@ -93,7 +80,7 @@ export default function AlmoxarifadoScreen() {
     } finally {
       setLoading(false);
     }
-  }, [busca, status, periodo, tipo, data]);
+  }, [busca, status, data]);
 
   useEffect(() => {
     void carregar();
@@ -136,7 +123,7 @@ export default function AlmoxarifadoScreen() {
         returnKeyType="search"
       />
 
-      {/* Filtros */}
+      {/* Filtros (fix 5 — prancheta de baixa: só o que interessa ao carregamento) */}
       <View style={styles.filtros}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filtroRow}>
           {STATUS_OPCOES.map((s) => (
@@ -148,47 +135,20 @@ export default function AlmoxarifadoScreen() {
               <Text style={[styles.chipText, status === s.key && styles.chipTextOn]}>{s.label}</Text>
             </TouchableOpacity>
           ))}
-          {PERIODO_OPCOES.map((p) => (
-            <TouchableOpacity
-              key={p.key}
-              style={[styles.chip, periodo === p.key && styles.chipOn]}
-              onPress={() => setPeriodo(p.key)}
-            >
-              <Text style={[styles.chipText, periodo === p.key && styles.chipTextOn]}>{p.label}</Text>
-            </TouchableOpacity>
-          ))}
-          {TIPO_OPCOES.map((t) => (
-            <TouchableOpacity
-              key={t.key}
-              style={[styles.chip, tipo === t.key && styles.chipOn]}
-              onPress={() => setTipo(t.key)}
-            >
-              <Text style={[styles.chipText, tipo === t.key && styles.chipTextOn]}>{t.label}</Text>
-            </TouchableOpacity>
-          ))}
         </ScrollView>
       </View>
 
-      {/* Data da rota (o que carregar na kombi no dia) — filtro opcional */}
+      {/* Dia da entrega — carregamento é feito na VÉSPERA, no fim da tarde (fix 5) */}
       <View style={styles.dataRow}>
-        <TouchableOpacity
-          style={styles.dataBtn}
-          onPress={() => setData((p) => (p ? new Date(p.getTime() - 86400000) : new Date()))}
-        >
+        <TouchableOpacity style={styles.dataBtn} onPress={() => setData((p) => new Date(p.getTime() - 86400000))}>
           <Text style={styles.dataBtnText}>◀</Text>
         </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.dataCentro}
-          onPress={() => setData((p) => (p ? null : new Date()))}
-        >
-          <Text style={styles.dataTitulo}>🚚 Carregar no dia</Text>
-          <Text style={styles.dataTexto}>{data ? fmtDataBR(data) : 'Off (todos os dias)'}</Text>
-          <Text style={styles.dataDica}>{data ? 'Toque para desativar' : 'Toque para ativar'}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.dataBtn}
-          onPress={() => setData((p) => (p ? new Date(p.getTime() + 86400000) : new Date()))}
-        >
+        <View style={styles.dataCentro}>
+          <Text style={styles.dataTitulo}>🚚 Carregamento para a entrega</Text>
+          <Text style={styles.dataTexto}>{fmtDataBR(data)}</Text>
+          <Text style={styles.dataDica}>Carregar na véspera · fim da tarde</Text>
+        </View>
+        <TouchableOpacity style={styles.dataBtn} onPress={() => setData((p) => new Date(p.getTime() + 86400000))}>
           <Text style={styles.dataBtnText}>▶</Text>
         </TouchableOpacity>
       </View>
@@ -211,7 +171,7 @@ export default function AlmoxarifadoScreen() {
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
           }
         >
-          <Text style={styles.total}>{tapetes.length} tapetes</Text>
+          <Text style={styles.total}>{tapetes.length} itens para {status === 'entregue' ? 'conferência' : 'carregamento'}</Text>
 
           {tapetes.length === 0 ? (
             <Text style={styles.vazio}>Nenhum tapete encontrado.</Text>

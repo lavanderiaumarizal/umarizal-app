@@ -32,6 +32,15 @@ function fmtData(iso?: string | null): string {
   return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
 }
 
+/** Data local no formato YYYY-MM-DD (filtro do backend) */
+function fmtDataISO(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function fmtDataBR(d: Date): string {
+  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
 export default function MinhasColetasEntregasScreen({
   route,
 }: {
@@ -46,17 +55,19 @@ export default function MinhasColetasEntregasScreen({
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  // Fix 7 — filtro de data com padrão HOJE ("ver todas" remove o filtro)
+  const [data, setData] = useState<Date | null>(() => new Date());
 
   const carregar = useCallback(async () => {
     setLoading(true);
     setErro(null);
     try {
       if (ehColeta) {
-        const res = await minhasColetas();
+        const res = await minhasColetas(data ? fmtDataISO(data) : undefined);
         setItens(res.data?.coletas ?? []);
         setTransportador(res.data?.transportador?.nome ?? null);
       } else {
-        const res = await minhasEntregas();
+        const res = await minhasEntregas(data ? fmtDataISO(data) : undefined);
         setItens(res.data?.entregas ?? []);
         setTransportador(res.data?.transportador?.nome ?? null);
       }
@@ -65,7 +76,7 @@ export default function MinhasColetasEntregasScreen({
     } finally {
       setLoading(false);
     }
-  }, [ehColeta]);
+  }, [ehColeta, data]);
 
   useEffect(() => {
     void carregar();
@@ -116,6 +127,29 @@ export default function MinhasColetasEntregasScreen({
         {transportador ? `Transportador: ${transportador}` : 'Atribuídas a você'}
       </Text>
 
+      {/* Filtro de data (fix 7) — padrão hoje */}
+      <View style={styles.dataRow}>
+        <TouchableOpacity
+          style={styles.dataBtn}
+          onPress={() => setData((p) => (p ? new Date(p.getTime() - 86400000) : new Date()))}
+        >
+          <Text style={styles.dataBtnText}>◀</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.dataCentro}
+          onPress={() => setData((p) => (p ? null : new Date()))}
+        >
+          <Text style={styles.dataTexto}>{data ? `📅 ${fmtDataBR(data)}` : '📅 Todas as datas'}</Text>
+          <Text style={styles.dataDica}>{data ? 'Toque para ver todas' : 'Toque para ver só um dia'}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.dataBtn}
+          onPress={() => setData((p) => (p ? new Date(p.getTime() + 86400000) : new Date()))}
+        >
+          <Text style={styles.dataBtnText}>▶</Text>
+        </TouchableOpacity>
+      </View>
+
       {erro ? (
         <View style={styles.centerBox}>
           <Text style={styles.erro}>{erro}</Text>
@@ -126,7 +160,9 @@ export default function MinhasColetasEntregasScreen({
       ) : itens.length === 0 ? (
         <Text style={styles.vazio}>
           {transportador
-            ? `Nenhuma ${tipo === 'coleta' ? 'coleta' : 'entrega'} pendente. 🎉`
+            ? data
+              ? `Nenhuma ${tipo === 'coleta' ? 'coleta' : 'entrega'} para ${fmtDataBR(data)}. 🎉`
+              : `Nenhuma ${tipo === 'coleta' ? 'coleta' : 'entrega'} pendente. 🎉`
             : 'Você ainda não está vinculado a um transportador. Peça ao admin para configurar.'}
         </Text>
       ) : (
@@ -159,6 +195,23 @@ const styles = StyleSheet.create({
   centerBox: { alignItems: 'center', paddingVertical: 32 },
   titulo: { color: colors.text, fontSize: 18, fontWeight: 'bold' },
   sub: { color: colors.textSecondary, fontSize: 13, marginTop: 2, marginBottom: 16 },
+  dataRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: colors.activeBg,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    borderRadius: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    marginBottom: 14,
+  },
+  dataBtn: { paddingHorizontal: 14, paddingVertical: 4 },
+  dataBtnText: { color: colors.active, fontSize: 16, fontWeight: 'bold' },
+  dataCentro: { alignItems: 'center' },
+  dataTexto: { color: colors.text, fontSize: 14, fontWeight: 'bold' },
+  dataDica: { color: colors.textMuted, fontSize: 10, marginTop: 1 },
   erro: { color: colors.danger, fontSize: 14, textAlign: 'center', marginBottom: 12 },
   botao: { backgroundColor: primaryGradient[1], borderRadius: 10, paddingVertical: 12, paddingHorizontal: 24 },
   botaoText: { color: '#fff', fontWeight: 'bold' },

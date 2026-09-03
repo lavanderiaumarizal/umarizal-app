@@ -35,6 +35,18 @@ const PERFIL_LABEL: Record<Perfil, string> = {
   secagem: 'Secagem',
 };
 
+/** Perfis cujas fases têm âncora de data — filtro útil apenas para eles */
+const PERFIS_COM_FILTRO_DATA: Perfil[] = ['motorista', 'expedicao', 'admin'];
+
+/** Data local no formato YYYY-MM-DD (filtro do backend) */
+function fmtDataISO(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function fmtDataBR(d: Date): string {
+  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
 /** Ordem das fases (mesma da Trilha da Excelência do painel admin) */
 const FASE_ORDER = [
   'F0_ABORDAGEM',
@@ -83,10 +95,14 @@ export default function KanbanProducaoScreen({
   const [dados, setDados] = useState<Record<string, any[]>>({});
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
+  // Fix 8 — filtro de data como na Rota do Dia (motorista já abre em HOJE)
+  const [data, setData] = useState<Date | null>(() =>
+    perfil === 'motorista' ? new Date() : null,
+  );
 
   const carregar = useCallback(async () => {
     try {
-      const res = await kanbanPorPerfil(perfil);
+      const res = await kanbanPorPerfil(perfil, data ? fmtDataISO(data) : undefined);
       const colunas = res.data.colunas ?? {};
       // Achata as 3 colunas do backend e reagrupa por FASE (lógica da trilha)
       const itens = [
@@ -106,7 +122,7 @@ export default function KanbanProducaoScreen({
     } finally {
       setLoading(false);
     }
-  }, [perfil]);
+  }, [perfil, data]);
 
   useEffect(() => {
     void carregar();
@@ -127,6 +143,31 @@ export default function KanbanProducaoScreen({
           </TouchableOpacity>
         </View>
       </View>
+
+      {/* Filtro de data (fix 8) — mesmo padrão da Rota do Dia */}
+      {PERFIS_COM_FILTRO_DATA.includes(perfil) && (
+        <View style={styles.dataRow}>
+          <TouchableOpacity
+            style={styles.dataBtn}
+            onPress={() => setData((p) => (p ? new Date(p.getTime() - 86400000) : new Date()))}
+          >
+            <Text style={styles.dataBtnText}>◀</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.dataCentro}
+            onPress={() => setData((p) => (p ? null : new Date()))}
+          >
+            <Text style={styles.dataTexto}>{data ? `📅 ${fmtDataBR(data)}` : '📅 Todas as datas'}</Text>
+            <Text style={styles.dataDica}>{data ? 'Toque para ver todas' : 'Toque para ver só um dia'}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.dataBtn}
+            onPress={() => setData((p) => (p ? new Date(p.getTime() + 86400000) : new Date()))}
+          >
+            <Text style={styles.dataBtnText}>▶</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {loading ? (
         <View style={styles.center}>
@@ -218,6 +259,24 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: 'bold',
   },
+  dataRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginHorizontal: 12,
+    marginBottom: 8,
+    backgroundColor: colors.activeBg,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    borderRadius: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+  },
+  dataBtn: { paddingHorizontal: 14, paddingVertical: 4 },
+  dataBtnText: { color: colors.active, fontSize: 16, fontWeight: 'bold' },
+  dataCentro: { alignItems: 'center' },
+  dataTexto: { color: colors.text, fontSize: 14, fontWeight: 'bold' },
+  dataDica: { color: colors.textMuted, fontSize: 10, marginTop: 1 },
   center: {
     flex: 1,
     alignItems: 'center',
