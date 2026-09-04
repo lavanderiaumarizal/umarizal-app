@@ -51,6 +51,15 @@ function fmtDiaSemana(iso: string): string {
   return d.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '');
 }
 
+/** Rótulo do dia na lista de previsão: "Hoje", "Amanhã" ou "seg 08" */
+function fmtDiaLista(iso: string, indice: number): string {
+  if (indice === 0) return 'Hoje';
+  if (indice === 1) return 'Amanhã';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '—';
+  return `${fmtDiaSemana(iso)} ${d.getDate()}`;
+}
+
 /** Rótulo do fator de secagem (mesma lógica da página da estufa do painel) */
 function fatorSecagemLabel(f?: 'bom' | 'regular' | 'ruim'): string {
   if (f === 'bom') return '☀️ Bom para secagem';
@@ -340,7 +349,7 @@ export default function DashboardScreen() {
                 style={[styles.tempoDia, i === 0 && styles.tempoDiaHoje]}
                 onPress={() => setDiaPrevisao(d)}
               >
-                <Text style={styles.tempoDiaLabel}>{i === 0 ? 'Hoje' : fmtDiaSemana(d.data)}</Text>
+                <Text style={styles.tempoDiaLabel}>{fmtDiaLista(d.data, i)}</Text>
                 <Text style={styles.tempoDiaIcone}>{d.icone}</Text>
                 <Text style={styles.tempoDiaTemp}>{d.temperaturaMax ?? '—'}°</Text>
                 <Text style={styles.tempoDiaChuva}>🌧 {d.chuvaTotal ?? 0}mm</Text>
@@ -378,9 +387,15 @@ export default function DashboardScreen() {
                     <Text style={styles.modalItemValor}>{diaPrevisao.chuvaTotal ?? 0} mm</Text>
                   </View>
                   <View style={styles.modalItem}>
-                    <Text style={styles.modalItemLabel}>Chance de chuva</Text>
+                    <Text style={styles.modalItemLabel}>Cobertura de chuva</Text>
                     <Text style={styles.modalItemValor}>
                       {diaPrevisao.probabilidadeChuva != null ? `${diaPrevisao.probabilidadeChuva}%` : '—'}
+                    </Text>
+                  </View>
+                  <View style={styles.modalItem}>
+                    <Text style={styles.modalItemLabel}>Chuva prevista</Text>
+                    <Text style={styles.modalItemValor}>
+                      {diaPrevisao.chuvaInicio ? `${diaPrevisao.chuvaInicio} às ${diaPrevisao.chuvaFim || '—'}` : 'Sem chuva'}
                     </Text>
                   </View>
                   <View style={styles.modalItem}>

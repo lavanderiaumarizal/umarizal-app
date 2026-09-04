@@ -19,7 +19,11 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, primaryGradient } from '../theme';
-import { getRelatorioDia, type RelatorioDia } from '../api/relatorio';
+import {
+  getRelatorioDia,
+  type RelatorioDia,
+  type RelatorioOrcamento,
+} from '../api/relatorio';
 import { useAuthStore } from '../store/authStore';
 import Preco from '../components/Preco';
 
@@ -46,6 +50,23 @@ function fmtDuracao(min?: number | null): string {
   const h = Math.floor(total / 60);
   const m = total % 60;
   return h > 0 ? `${h}h${m > 0 ? ` ${m}min` : ''}` : `${m}min`;
+}
+
+/** Linha de texto de um orçamento do relatório (para tela e compartilhar) */
+function fmtOrcamento(o: RelatorioOrcamento, ehAdmin: boolean): string[] {
+  const status = o.realizada ? '✅' : '⏳';
+  const cliente = o.cliente || 'Cliente —';
+  const endereco = [o.endereco, o.complemento].filter(Boolean).join(', ');
+  const itens = (o.itens ?? [])
+    .map((i) => `     • ${i.quantidade}x ${i.descricao}`)
+    .join('\n');
+  const linhas = [
+    `${status} ${o.codigo} — ${cliente}${o.usaEnderecoServico ? ' 📍end. serviço' : ''}`,
+    `     📍 ${endereco || 'endereço não informado'}${o.bairro ? ` — ${o.bairro}` : ''}`,
+  ];
+  if (itens) linhas.push(itens);
+  if (ehAdmin && o.valor !== undefined) linhas.push(`     💰 ${fmtMoeda(o.valor)}`);
+  return linhas;
 }
 
 export default function RelatorioDiaScreen() {
@@ -82,19 +103,61 @@ export default function RelatorioDiaScreen() {
     setRefreshing(false);
   }, [carregar]);
 
+  /** Card de um orçamento do dia (coleta ou entrega) */
+  function renderDetalhes(lista: RelatorioOrcamento[]) {
+    if (lista.length === 0) {
+      return <Text style={styles.vazio}>Nenhum registro neste dia.</Text>;
+    }
+    return lista.map((o) => (
+      <View key={o.id} style={[styles.detalheCard, o.realizada && styles.detalheCardOk]}>
+        <View style={styles.detalheHeader}>
+          <Text style={styles.detalheCodigo}>
+            {o.realizada ? '✅' : '⏳'} {o.codigo}
+          </Text>
+          {ehAdmin && o.valor !== undefined && (
+            <Text style={styles.detalheValor}>{fmtMoeda(o.valor)}</Text>
+          )}
+        </View>
+        <Text style={styles.detalheCliente}>{o.cliente || 'Cliente —'}</Text>
+        <Text style={styles.detalheEndereco}>
+          📍 {[o.endereco, o.complemento].filter(Boolean).join(', ') || 'endereço não informado'}
+          {o.bairro ? ` — ${o.bairro}` : ''}
+          {o.usaEnderecoServico ? '  (endereço de serviço)' : ''}
+        </Text>
+        {(o.itens ?? []).length > 0 && (
+          <Text style={styles.detalheItens}>
+            {(o.itens ?? []).map((i) => `${i.quantidade}x ${i.descricao}`).join('  ·  ')}
+          </Text>
+        )}
+      </View>
+    ));
+  }
+
   async function compartilhar() {
     if (!relatorio) return;
+    const coletas = relatorio.coletasDetalhe ?? [];
+    const entregas = relatorio.entregasDetalhe ?? [];
+    const blocoDetalhes = (titulo: string, lista: RelatorioOrcamento[]) =>
+      lista.length > 0
+        ? [`\n${titulo}:`, ...lista.flatMap((o) => fmtOrcamento(o, ehAdmin))]
+        : [`\n${titulo}: nenhuma`];
+
     const linhas = [
       `📊 Relatório — ${fmtDataBR(relatorio.data)}`,
       '',
-      `📦 Coletas: ${relatorio.totalColetas}`,
-      `🚚 Entregas: ${relatorio.totalEntregas}`,
+      `📦 Coletas: ${relatorio.totalColetas} realizadas · ${relatorio.coletasAgendadas ?? 0} agendadas`,
+      `🚚 Entregas: ${relatorio.totalEntregas} realizadas · ${relatorio.entregasAgendadas ?? 0} agendadas`,
       ehAdmin && relatorio.valorColetas !== undefined
         ? `💰 Valor coletado: ${fmtMoeda(relatorio.valorColetas)}`
         : '',
       ehAdmin && relatorio.valorEntregas !== undefined
         ? `💰 Valor entregue: ${fmtMoeda(relatorio.valorEntregas)}`
         : '',
+      relatorio.rota?.existe
+        ? `\n🚚 Rota: ${relatorio.rota.paradasConcluidas}/${relatorio.rota.totalParadas} paradas · 🛣️ ${relatorio.rota.distanciaKm ?? 0} km · 🕐 saída ${relatorio.rota.horarioSaida ?? '––:––'} · retorno ${relatorio.rota.previsaoRetorno ?? '––:––'}`
+        : '',
+      ...blocoDetalhes('📦 COLETAS DO DIA', coletas),
+      ...blocoDetalhes('🚚 ENTREGAS DO DIA', entregas),
       '',
       '🧺 Por tipo de serviço:',
       ...relatorio.porTipoServico.map(
@@ -104,7 +167,7 @@ export default function RelatorioDiaScreen() {
       '',
       '⏱️ Tempo médio por fase:',
       ...relatorio.tempoMedioFase.map((f) => `  • ${f.label}: ${f.minutosMedios} min`),
-    ].filter(Boolean);
+    ].filter((l) => l !== '');
 
     await Share.share({ message: linhas.join('\n') }).catch(() => undefined);
   }
@@ -209,6 +272,14 @@ export default function RelatorioDiaScreen() {
         </View>
       ) : null}
 
+      {/* Detalhes completos do dia — coletas */}
+      <Text style={styles.secao}>📦 Coletas do dia</Text>
+      <View style={styles.card}>{renderDetalhes(relatorio.coletasDetalhe ?? [])}</View>
+
+      {/* Detalhes completos do dia — entregas */}
+      <Text style={styles.secao}>🚚 Entregas do dia</Text>
+      <View style={styles.card}>{renderDetalhes(relatorio.entregasDetalhe ?? [])}</View>
+
       {/* Por tipo de serviço */}
       <Text style={styles.secao}>🧺 Por tipo de serviço</Text>
       <View style={styles.card}>
@@ -308,6 +379,21 @@ const styles = StyleSheet.create({
   },
   rotaTitulo: { color: colors.text, fontSize: 14, fontWeight: 'bold', marginBottom: 4 },
   rotaLinha: { color: colors.textSecondary, fontSize: 13, marginTop: 2 },
+  detalheCard: {
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 8,
+  },
+  detalheCardOk: { borderColor: colors.success },
+  detalheHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  detalheCodigo: { color: colors.text, fontSize: 13, fontWeight: 'bold' },
+  detalheValor: { color: colors.brandGold, fontSize: 12, fontWeight: 'bold' },
+  detalheCliente: { color: colors.text, fontSize: 13, marginTop: 2 },
+  detalheEndereco: { color: colors.textSecondary, fontSize: 11, marginTop: 2 },
+  detalheItens: { color: colors.textSecondary, fontSize: 11, marginTop: 4 },
   secao: { color: colors.text, fontSize: 15, fontWeight: 'bold', marginTop: 20, marginBottom: 8 },
   vazio: { color: colors.textMuted, fontSize: 13, paddingVertical: 8 },
   linha: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: colors.border },

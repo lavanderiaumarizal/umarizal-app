@@ -19,6 +19,9 @@ export interface PrevisaoDia {
   ventoMax: number | null;
   fatorSecagem: 'bom' | 'regular' | 'ruim';
   icone: string;
+  /** Janela prevista de chuva — horários no fuso de São Paulo */
+  chuvaInicio: string | null;
+  chuvaFim: string | null;
 }
 
 /** GET /api/weather/previsao?dias=N */

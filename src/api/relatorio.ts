@@ -5,6 +5,33 @@
 import api from './client';
 import type { ApiSuccessResponse } from '../types';
 
+/** Item de orçamento no relatório (ex.: "3,00x4,00m Carro") */
+export interface RelatorioItem {
+  descricao: string;
+  quantidade: number;
+}
+
+/** Orçamento detalhado do dia (coleta ou entrega) */
+export interface RelatorioOrcamento {
+  id: string;
+  codigo: string;
+  cliente: string | null;
+  telefone: string | null;
+  endereco: string | null;
+  complemento: string | null;
+  bairro: string | null;
+  cidade: string | null;
+  uf: string | null;
+  cep: string | null;
+  usaEnderecoServico: boolean;
+  tipo: 'COLETA' | 'ENTREGA';
+  realizada: boolean;
+  status: string;
+  data: string | null;
+  itens: RelatorioItem[];
+  valor?: number;
+}
+
 /** Resumo da rota do dia (o dado que o motorista reconhece) */
 export interface RelatorioRota {
   existe: boolean;
@@ -24,6 +51,8 @@ export interface RelatorioDia {
   totalEntregas: number;
   coletasAgendadas?: number;
   entregasAgendadas?: number;
+  coletasDetalhe?: RelatorioOrcamento[];
+  entregasDetalhe?: RelatorioOrcamento[];
   valorColetas?: number;
   valorEntregas?: number;
   rota?: RelatorioRota;
