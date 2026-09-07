@@ -154,7 +154,7 @@ export default function RelatorioDiaScreen() {
         ? `💰 Valor entregue: ${fmtMoeda(relatorio.valorEntregas)}`
         : '',
       relatorio.rota?.existe
-        ? `\n🚚 Rota: ${relatorio.rota.paradasConcluidas}/${relatorio.rota.totalParadas} paradas · 🛣️ ${relatorio.rota.distanciaKm ?? 0} km · 🕐 saída ${relatorio.rota.horarioSaida ?? '––:––'} · retorno ${relatorio.rota.previsaoRetorno ?? '––:––'}`
+        ? `\n🚚 Rota: ${relatorio.rota.paradasConcluidas}/${relatorio.rota.totalParadas} paradas · 🛣️ ${Math.round(relatorio.rota.distanciaKm ?? 0)} km · 🕐 saída ${relatorio.rota.horarioSaida ?? '––:––'} · retorno ${relatorio.rota.previsaoRetorno ?? '––:––'}`
         : '',
       ...blocoDetalhes('📦 COLETAS DO DIA', coletas),
       ...blocoDetalhes('🚚 ENTREGAS DO DIA', entregas),
@@ -266,7 +266,7 @@ export default function RelatorioDiaScreen() {
             </Text>
           )}
           <Text style={styles.rotaLinha}>
-            🛣️ {relatorio.rota.distanciaKm ?? 0} km · duração prevista{' '}
+            🛣️ {Math.round(relatorio.rota.distanciaKm ?? 0)} km · duração prevista{' '}
             {fmtDuracao(relatorio.rota.duracaoMin)}
           </Text>
         </View>
@@ -325,10 +325,10 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   content: { padding: 16, paddingBottom: 40 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, backgroundColor: colors.background },
-  erro: { color: colors.danger, fontSize: 14, textAlign: 'center', marginBottom: 12 },
+  erro: { color: colors.danger, fontSize: 16, textAlign: 'center', marginBottom: 12 },
   botaoPrimario: { backgroundColor: primaryGradient[1], borderRadius: 10, paddingVertical: 12, paddingHorizontal: 24 },
   botaoPrimarioText: { color: '#fff', fontWeight: 'bold' },
-  data: { color: colors.textSecondary, fontSize: 13, marginBottom: 12 },
+  data: { color: colors.textSecondary, fontSize: 15, marginBottom: 12 },
   dataRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -342,10 +342,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   dataBtn: { paddingHorizontal: 14, paddingVertical: 4 },
-  dataBtnText: { color: colors.active, fontSize: 16, fontWeight: 'bold' },
+  dataBtnText: { color: colors.active, fontSize: 18, fontWeight: 'bold' },
   dataCentro: { alignItems: 'center' },
-  dataTexto: { color: colors.text, fontSize: 14, fontWeight: 'bold' },
-  dataHoje: { color: colors.textMuted, fontSize: 10, marginTop: 2 },
+  dataTexto: { color: colors.text, fontSize: 16, fontWeight: 'bold' },
+  dataHoje: { color: colors.textMuted, fontSize: 12, marginTop: 2 },
   grid: { flexDirection: 'row', gap: 12 },
   card: {
     flex: 1,
@@ -356,9 +356,9 @@ const styles = StyleSheet.create({
     borderLeftWidth: 4,
     padding: 14,
   },
-  cardValue: { color: colors.text, fontSize: 26, fontWeight: 'bold' },
-  cardLabel: { color: colors.textSecondary, fontSize: 13, marginTop: 2 },
-  cardValor: { color: colors.brandGold, fontSize: 13, fontWeight: 'bold', marginTop: 4 },
+  cardValue: { color: colors.text, fontSize: 30, fontWeight: 'bold' },
+  cardLabel: { color: colors.textSecondary, fontSize: 15, marginTop: 2 },
+  cardValor: { color: colors.brandGold, fontSize: 15, fontWeight: 'bold', marginTop: 4 },
   agendadasBox: {
     backgroundColor: colors.activeBg,
     borderWidth: 1,
@@ -367,8 +367,8 @@ const styles = StyleSheet.create({
     padding: 12,
     marginTop: 12,
   },
-  agendadasText: { color: colors.active, fontSize: 13, fontWeight: 'bold' },
-  agendadasHint: { color: colors.textMuted, fontSize: 11, marginTop: 4 },
+  agendadasText: { color: colors.active, fontSize: 15, fontWeight: 'bold' },
+  agendadasHint: { color: colors.textMuted, fontSize: 13, marginTop: 4 },
   rotaBox: {
     backgroundColor: colors.surface,
     borderWidth: 1,
@@ -377,8 +377,8 @@ const styles = StyleSheet.create({
     padding: 12,
     marginTop: 12,
   },
-  rotaTitulo: { color: colors.text, fontSize: 14, fontWeight: 'bold', marginBottom: 4 },
-  rotaLinha: { color: colors.textSecondary, fontSize: 13, marginTop: 2 },
+  rotaTitulo: { color: colors.text, fontSize: 16, fontWeight: 'bold', marginBottom: 4 },
+  rotaLinha: { color: colors.textSecondary, fontSize: 15, marginTop: 2 },
   detalheCard: {
     backgroundColor: colors.background,
     borderWidth: 1,
@@ -389,18 +389,18 @@ const styles = StyleSheet.create({
   },
   detalheCardOk: { borderColor: colors.success },
   detalheHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  detalheCodigo: { color: colors.text, fontSize: 13, fontWeight: 'bold' },
-  detalheValor: { color: colors.brandGold, fontSize: 12, fontWeight: 'bold' },
-  detalheCliente: { color: colors.text, fontSize: 13, marginTop: 2 },
-  detalheEndereco: { color: colors.textSecondary, fontSize: 11, marginTop: 2 },
-  detalheItens: { color: colors.textSecondary, fontSize: 11, marginTop: 4 },
-  secao: { color: colors.text, fontSize: 15, fontWeight: 'bold', marginTop: 20, marginBottom: 8 },
-  vazio: { color: colors.textMuted, fontSize: 13, paddingVertical: 8 },
+  detalheCodigo: { color: colors.text, fontSize: 15, fontWeight: 'bold' },
+  detalheValor: { color: colors.brandGold, fontSize: 14, fontWeight: 'bold' },
+  detalheCliente: { color: colors.text, fontSize: 15, marginTop: 2 },
+  detalheEndereco: { color: colors.textSecondary, fontSize: 13, marginTop: 2 },
+  detalheItens: { color: colors.textSecondary, fontSize: 13, marginTop: 4 },
+  secao: { color: colors.text, fontSize: 17, fontWeight: 'bold', marginTop: 20, marginBottom: 8 },
+  vazio: { color: colors.textMuted, fontSize: 15, paddingVertical: 8 },
   linha: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: colors.border },
-  linhaLabel: { color: colors.text, fontSize: 14 },
+  linhaLabel: { color: colors.text, fontSize: 16 },
   linhaRight: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  linhaQtd: { color: colors.text, fontSize: 14, fontWeight: 'bold' },
-  linhaValor: { color: colors.brandGold, fontSize: 13, fontWeight: '600' },
+  linhaQtd: { color: colors.text, fontSize: 16, fontWeight: 'bold' },
+  linhaValor: { color: colors.brandGold, fontSize: 15, fontWeight: '600' },
   compartilhar: {
     backgroundColor: colors.activeBg,
     borderWidth: 1,
@@ -410,5 +410,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 24,
   },
-  compartilharText: { color: colors.active, fontWeight: 'bold', fontSize: 14 },
+  compartilharText: { color: colors.active, fontWeight: 'bold', fontSize: 16 },
 });

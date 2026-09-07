@@ -35,7 +35,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   text: {
-    fontSize: 11,
+    fontSize: 13,
     fontWeight: 'bold',
   },
 });

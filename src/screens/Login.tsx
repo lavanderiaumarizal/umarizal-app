@@ -175,24 +175,24 @@ const styles = StyleSheet.create({
   logoText: {
     color: '#fff',
     fontWeight: 'bold',
-    fontSize: 20,
+    fontSize: 23,
   },
   title: {
     color: colors.text,
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
     textAlign: 'center',
     marginTop: 12,
   },
   subtitle: {
     color: colors.textSecondary,
-    fontSize: 14,
+    fontSize: 16,
     textAlign: 'center',
     marginBottom: 24,
   },
   label: {
     color: colors.textSecondary,
-    fontSize: 13,
+    fontSize: 15,
     marginBottom: 6,
     marginTop: 12,
   },
@@ -204,7 +204,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 12,
     color: colors.text,
-    fontSize: 15,
+    fontSize: 17,
   },
   checkboxRow: {
     flexDirection: 'row',
@@ -227,16 +227,16 @@ const styles = StyleSheet.create({
   },
   checkboxCheck: {
     color: '#fff',
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: 'bold',
   },
   checkboxLabel: {
     color: colors.textSecondary,
-    fontSize: 14,
+    fontSize: 16,
   },
   erro: {
     color: colors.danger,
-    fontSize: 13,
+    fontSize: 15,
     marginTop: 12,
   },
   button: {
@@ -251,7 +251,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
   },
 });

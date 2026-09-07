@@ -67,6 +67,32 @@ function fmtDuracao(min?: number | null): string {
 /** Horários sugeridos no modal interativo (sem teclado — fix 2) */
 const HORARIOS_SUGERIDOS = ['06:00', '06:30', '07:00', '07:30', '08:00', '08:30', '09:00', '13:00'];
 
+/** "HH:MM" → minutos desde 00:00 (null se inválido) */
+function minutosDe(hhmm: string | null | undefined): number | null {
+  if (!hhmm) return null;
+  const m = hhmm.match(/^(\d{1,2}):(\d{2})$/);
+  return m ? parseInt(m[1], 10) * 60 + parseInt(m[2], 10) : null;
+}
+
+/** Minutos → "HH:MM" (com wrap de 24h) */
+function minutosParaHHMM(min: number): string {
+  const m = ((Math.round(min) % 1440) + 1440) % 1440;
+  return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+}
+
+/** Minutos atuais no fuso de São Paulo (independe do fuso do aparelho) */
+function agoraMinutosSP(): number {
+  const parts = new Intl.DateTimeFormat('pt-BR', {
+    timeZone: 'America/Sao_Paulo',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(new Date());
+  const h = Number(parts.find((p) => p.type === 'hour')?.value ?? 0);
+  const m = Number(parts.find((p) => p.type === 'minute')?.value ?? 0);
+  return h * 60 + m;
+}
+
 type AcaoModal =
   | { tipo: 'coleta'; stop: Stop }
   | { tipo: 'entrega'; stop: Stop }
@@ -80,6 +106,8 @@ export default function RotaDoDiaScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [gerando, setGerando] = useState(false);
+  // ⏱️ Recálculo ORS pós-coleta/entrega (best-effort, sem mudar a ordem)
+  const [recalculando, setRecalculando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
   const [acao, setAcao] = useState<AcaoModal>(null);
@@ -114,15 +142,17 @@ export default function RotaDoDiaScreen() {
     });
   }
 
-  const carregar = useCallback(async (dataAlvo: Date) => {
+  const carregar = useCallback(async (dataAlvo: Date): Promise<RotaDoDia | null> => {
     setLoading(true);
     setErro(null);
     try {
       const r = await getRotaDoDia(fmtData(dataAlvo));
       setRota(r);
+      return r;
     } catch {
       setErro('Não foi possível carregar a rota. Verifique sua conexão.');
       setRota(null);
+      return null;
     } finally {
       setLoading(false);
     }
@@ -260,6 +290,80 @@ export default function RotaDoDiaScreen() {
     }
   }
 
+  /** ⏱️ Pós-coleta/entrega — recalcula os tempos da rota com o ORS (motor ativo)
+   *  SEM alterar a ordem estabelecida (ordem normal ou flip são preservadas —
+   *  skipOptimisation). As paradas pendentes são reancoradas no "agora" para
+   *  que o Portal do Cliente sempre veja um horário previsto atualizado.
+   *  Concluídas mantêm o horário original e a saída real do depot é preservada.
+   */
+  async function recalcularTemposRota(base?: RotaDoDia | null) {
+    const atual = base ?? rota;
+    if (!atual || atual.stops.length === 0) return;
+    if (!atual.stops.some((s) => !s.concluido)) return; // rota concluída — nada a atualizar
+    setRecalculando(true);
+    try {
+      const stops = stopsDaRota(atual.stops);
+      const otimizada = await optimizeRota(stops, {
+        date: fmtData(data),
+        skipOptimisation: true,
+      });
+
+      // Códigos das paradas já concluídas (horário original é preservado)
+      const concluidoPorCodigo = new Set(
+        atual.stops.filter((s) => s.concluido).map((s) => s.codigo || s.orcamentoId || ''),
+      );
+      const horarioAntigoPorCodigo = new Map(
+        atual.stops.map((s) => [s.codigo || s.orcamentoId || '', s.horarioChegada] as const),
+      );
+      const depotInicioAntigo =
+        atual.allWaypoints.find((w) => w.tipo === 'DEPOT')?.horarioChegada ?? null;
+
+      // 1ª parada pendente na nova resposta → âncora "agora"
+      const agora = agoraMinutosSP();
+      let deslocamento: number | null = null;
+      for (const wp of otimizada?.waypoints ?? []) {
+        if (wp.type === 'DEPOT') continue;
+        const codigo = (wp.address ?? '').split(' - ')[0] ?? '';
+        if (!concluidoPorCodigo.has(codigo)) {
+          deslocamento = agora - (minutosDe(wp.arrivalTime) ?? agora);
+          break;
+        }
+      }
+
+      otimizada.waypoints = (otimizada?.waypoints ?? []).map((wp: any, idx: number) => {
+          if (wp.type === 'DEPOT') {
+            // Saída real (depot inicial) preservada; retorno desloca junto
+            if (idx === 0 && depotInicioAntigo) {
+              return { ...wp, arrivalTime: depotInicioAntigo };
+            }
+            if (deslocamento != null) {
+              const m = minutosDe(wp.arrivalTime);
+              if (m != null) return { ...wp, arrivalTime: minutosParaHHMM(m + deslocamento) };
+            }
+            return wp;
+          }
+          const codigo = (wp.address ?? '').split(' - ')[0] ?? '';
+          if (concluidoPorCodigo.has(codigo)) {
+            const antigo = horarioAntigoPorCodigo.get(codigo);
+            if (antigo) return { ...wp, arrivalTime: antigo };
+          }
+          if (deslocamento != null) {
+            const m = minutosDe(wp.arrivalTime);
+            if (m != null) return { ...wp, arrivalTime: minutosParaHHMM(m + deslocamento) };
+          }
+          return wp;
+        },
+      );
+
+      await saveRota(fmtData(data), otimizada, stops);
+      await carregar(data);
+    } catch {
+      // Recálculo é best-effort — a rota atual permanece válida
+    } finally {
+      setRecalculando(false);
+    }
+  }
+
   /** Abre o Google Maps na parada (endereço sem o prefixo do código).
    *  Paradas FIXO: o backend já envia o endereço REAL do cadastro — nunca
    *  "FIXO-Nome" (fix 4). */
@@ -310,7 +414,10 @@ export default function RotaDoDiaScreen() {
         });
       }
       setAcao(null);
-      await carregar(data); // B23 → parada volta como concluída
+      const novaRota = await carregar(data); // B23 → parada volta como concluída
+      // ⏱️ Recalcula horários previstos com o ORS (ordem preservada) — o Portal
+      // do Cliente passa a exibir a previsão atualizada para as próximas paradas
+      await recalcularTemposRota(novaRota);
     } catch {
       setErro('Não foi possível concluir a ação. Tente novamente.');
     } finally {
@@ -386,12 +493,17 @@ export default function RotaDoDiaScreen() {
             return (
               <>
                 <Text style={styles.resumo}>
-                  {rota.stops.length} paradas · {rota.totalDistanceKm ?? 0} km ·{' '}
+                  {rota.stops.length} paradas · {Math.round(rota.totalDistanceKm ?? 0)} km ·{' '}
                   {fmtDuracao(rota.totalDurationMinutes)}
                 </Text>
                 {(saida || retorno) && (
                   <Text style={styles.resumoHorarios}>
                     🕐 Saída {saida ?? '––:––'} · retorno previsto {retorno ?? '––:––'}
+                  </Text>
+                )}
+                {recalculando && (
+                  <Text style={styles.resumoHorarios}>
+                    ⏱️ Atualizando horários previstos (ORS)…
                   </Text>
                 )}
               </>
@@ -405,32 +517,32 @@ export default function RotaDoDiaScreen() {
           {/* F14.2/F14.3/F14.4 — Gerar, Re-otimizar, Flip e Salvar rota */}
           <View style={styles.rotaAcoes}>
             <TouchableOpacity
-              style={[styles.botaoAcaoRota, gerando && styles.botaoDisabled]}
+              style={[styles.botaoAcaoRota, (gerando || recalculando) && styles.botaoDisabled]}
               onPress={() => setMostrarHorarioSaida(true)}
-              disabled={gerando}
+              disabled={gerando || recalculando}
             >
               <Text style={styles.botaoAcaoRotaText}>🔄 Gerar Rota</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.botaoAcaoRota, gerando && styles.botaoDisabled]}
+              style={[styles.botaoAcaoRota, (gerando || recalculando) && styles.botaoDisabled]}
               onPress={() => setMostrarHorarioSaida(true)}
-              disabled={gerando}
+              disabled={gerando || recalculando}
             >
               <Text style={styles.botaoAcaoRotaText}>⏱️ Re-otimizar</Text>
             </TouchableOpacity>
           </View>
           <View style={styles.rotaAcoes}>
             <TouchableOpacity
-              style={[styles.botaoFlip, gerando && styles.botaoDisabled]}
+              style={[styles.botaoFlip, (gerando || recalculando) && styles.botaoDisabled]}
               onPress={() => void flipRota()}
-              disabled={gerando}
+              disabled={gerando || recalculando}
             >
               <Text style={styles.botaoFlipText}>🔄 Flip (inverter ordem)</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.botaoSalvar, gerando && styles.botaoDisabled]}
+              style={[styles.botaoSalvar, (gerando || recalculando) && styles.botaoDisabled]}
               onPress={() => void salvarRotaAtual()}
-              disabled={gerando}
+              disabled={gerando || recalculando}
             >
               <Text style={styles.botaoSalvarText}>💾 Salvar Rota</Text>
             </TouchableOpacity>
@@ -720,13 +832,13 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border,
   },
   dataBtn: { padding: 10 },
-  dataBtnText: { color: colors.primary, fontSize: 18, fontWeight: 'bold' },
+  dataBtnText: { color: colors.primary, fontSize: 21, fontWeight: 'bold' },
   dataCentro: { alignItems: 'center' },
-  title: { color: colors.text, fontSize: 17, fontWeight: 'bold' },
-  dataTexto: { color: colors.textSecondary, fontSize: 13, marginTop: 2 },
+  title: { color: colors.text, fontSize: 20, fontWeight: 'bold' },
+  dataTexto: { color: colors.textSecondary, fontSize: 15, marginTop: 2 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
-  erro: { color: colors.danger, fontSize: 14, textAlign: 'center', marginBottom: 12 },
-  semRota: { color: colors.textSecondary, fontSize: 15, marginBottom: 16 },
+  erro: { color: colors.danger, fontSize: 16, textAlign: 'center', marginBottom: 12 },
+  semRota: { color: colors.textSecondary, fontSize: 17, marginBottom: 16 },
   botaoPrimario: {
     backgroundColor: primaryGradient[1],
     borderRadius: 10,
@@ -735,10 +847,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     minWidth: 180,
   },
-  botaoPrimarioText: { color: '#fff', fontWeight: 'bold', fontSize: 14 },
+  botaoPrimarioText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
   lista: { padding: 12, paddingBottom: 32 },
-  resumo: { color: colors.textSecondary, fontSize: 12, marginBottom: 4 },
-  resumoHorarios: { color: colors.textSecondary, fontSize: 12, fontWeight: '600', marginBottom: 10 },
+  resumo: { color: colors.textSecondary, fontSize: 14, marginBottom: 4 },
+  resumoHorarios: { color: colors.textSecondary, fontSize: 14, fontWeight: '600', marginBottom: 10 },
   botaoMapa: {
     backgroundColor: colors.surface,
     borderWidth: 1,
@@ -748,7 +860,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 10,
   },
-  botaoMapaText: { color: colors.primary, fontWeight: 'bold', fontSize: 13 },
+  botaoMapaText: { color: colors.primary, fontWeight: 'bold', fontSize: 15 },
   rotaAcoes: { flexDirection: 'row', gap: 8, marginBottom: 12 },
   botaoFlip: {
     flex: 1,
@@ -759,7 +871,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     alignItems: 'center',
   },
-  botaoFlipText: { color: colors.active, fontWeight: 'bold', fontSize: 12 },
+  botaoFlipText: { color: colors.active, fontWeight: 'bold', fontSize: 14 },
   botaoAcaoRota: {
     flex: 1,
     backgroundColor: colors.activeBg,
@@ -769,7 +881,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     alignItems: 'center',
   },
-  botaoAcaoRotaText: { color: colors.active, fontWeight: 'bold', fontSize: 13 },
+  botaoAcaoRotaText: { color: colors.active, fontWeight: 'bold', fontSize: 15 },
   botaoSalvar: {
     flex: 1,
     backgroundColor: colors.surface,
@@ -779,7 +891,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     alignItems: 'center',
   },
-  botaoSalvarText: { color: colors.textSecondary, fontWeight: 'bold', fontSize: 12 },
+  botaoSalvarText: { color: colors.textSecondary, fontWeight: 'bold', fontSize: 14 },
   mapaWrap: { flex: 1, backgroundColor: colors.background },
   mapaHeader: {
     flexDirection: 'row',
@@ -791,8 +903,8 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
-  mapaTitulo: { color: colors.text, fontSize: 16, fontWeight: 'bold' },
-  mapaFechar: { color: colors.textSecondary, fontSize: 14, fontWeight: '600' },
+  mapaTitulo: { color: colors.text, fontSize: 18, fontWeight: 'bold' },
+  mapaFechar: { color: colors.textSecondary, fontSize: 16, fontWeight: '600' },
   parada: {
     backgroundColor: colors.surface,
     borderRadius: 12,
@@ -812,13 +924,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   ordemBadgeConcluida: { backgroundColor: colors.success },
-  ordemText: { color: '#fff', fontWeight: 'bold', fontSize: 13 },
-  check: { color: '#fff', fontWeight: 'bold', fontSize: 14 },
+  ordemText: { color: '#fff', fontWeight: 'bold', fontSize: 15 },
+  check: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
   paradaInfo: { flex: 1 },
-  paradaTipo: { fontSize: 11, fontWeight: 'bold' },
-  paradaEndereco: { color: colors.textSecondary, fontSize: 12, marginTop: 2, lineHeight: 17 },
-  paradaComplemento: { color: colors.textSecondary, fontSize: 12, marginTop: 2, fontWeight: '600' },
-  paradaCliente: { color: colors.text, fontSize: 14, fontWeight: 'bold', marginTop: 3 },
+  paradaTipo: { fontSize: 13, fontWeight: 'bold' },
+  paradaEndereco: { color: colors.textSecondary, fontSize: 14, marginTop: 2, lineHeight: 20 },
+  paradaComplemento: { color: colors.textSecondary, fontSize: 14, marginTop: 2, fontWeight: '600' },
+  paradaCliente: { color: colors.text, fontSize: 16, fontWeight: 'bold', marginTop: 3 },
   acoes: { flexDirection: 'row', gap: 8, marginTop: 10 },
   botaoMaps: {
     backgroundColor: colors.background,
@@ -828,11 +940,11 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 14,
   },
-  botaoMapsText: { color: colors.textSecondary, fontWeight: '600', fontSize: 12 },
+  botaoMapsText: { color: colors.textSecondary, fontWeight: '600', fontSize: 14 },
   botaoAcao: { borderRadius: 8, paddingVertical: 8, paddingHorizontal: 18, flex: 1, alignItems: 'center' },
   botaoColeta: { backgroundColor: colors.brandLime },
   botaoEntrega: { backgroundColor: colors.brandGold },
-  botaoAcaoText: { color: '#111827', fontWeight: 'bold', fontSize: 13 },
+  botaoAcaoText: { color: '#111827', fontWeight: 'bold', fontSize: 15 },
   modalWrap: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', padding: 16 },
   modalCard: {
     backgroundColor: colors.surface,
@@ -842,9 +954,9 @@ const styles = StyleSheet.create({
     padding: 16,
     maxHeight: '90%',
   },
-  modalTitle: { color: colors.text, fontSize: 16, fontWeight: 'bold' },
-  modalDica: { color: colors.textMuted, fontSize: 12, marginTop: 2, marginBottom: 6 },
-  modalStop: { color: colors.textSecondary, fontSize: 12, marginTop: 2, marginBottom: 8 },
+  modalTitle: { color: colors.text, fontSize: 18, fontWeight: 'bold' },
+  modalDica: { color: colors.textMuted, fontSize: 14, marginTop: 2, marginBottom: 6 },
+  modalStop: { color: colors.textSecondary, fontSize: 14, marginTop: 2, marginBottom: 8 },
   fotoRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginVertical: 8 },
   fotoThumbWrap: { width: 56, height: 56, borderRadius: 8, overflow: 'hidden' },
   fotoThumb: { flex: 1, alignItems: 'center', justifyContent: 'center' },
@@ -859,7 +971,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  botaoCameraText: { color: colors.primary, fontSize: 10, textAlign: 'center' },
+  botaoCameraText: { color: colors.primary, fontSize: 12, textAlign: 'center' },
   obsInput: {
     backgroundColor: colors.background,
     borderWidth: 1,
@@ -870,11 +982,11 @@ const styles = StyleSheet.create({
     minHeight: 48,
     marginTop: 10,
     textAlignVertical: 'top',
-    fontSize: 13,
+    fontSize: 15,
   },
   horarioDisplay: {
     color: colors.text,
-    fontSize: 40,
+    fontSize: 46,
     fontWeight: 'bold',
     textAlign: 'center',
     marginVertical: 12,
@@ -889,7 +1001,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     alignItems: 'center',
   },
-  stepperText: { color: colors.active, fontWeight: 'bold', fontSize: 13 },
+  stepperText: { color: colors.active, fontWeight: 'bold', fontSize: 15 },
   horarioChipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
   horarioChip: {
     backgroundColor: colors.background,
@@ -900,7 +1012,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   horarioChipOn: { backgroundColor: colors.activeBg, borderColor: colors.primary },
-  horarioChipText: { color: colors.textSecondary, fontSize: 13, fontWeight: '600' },
+  horarioChipText: { color: colors.textSecondary, fontSize: 15, fontWeight: '600' },
   horarioChipTextOn: { color: colors.active, fontWeight: 'bold' },
   modalBotoes: { flexDirection: 'row', gap: 10, marginTop: 12 },
   botaoCancelar: {

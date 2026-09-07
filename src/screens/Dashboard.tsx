@@ -395,7 +395,11 @@ export default function DashboardScreen() {
                   <View style={styles.modalItem}>
                     <Text style={styles.modalItemLabel}>Chuva prevista</Text>
                     <Text style={styles.modalItemValor}>
-                      {diaPrevisao.chuvaInicio ? `${diaPrevisao.chuvaInicio} às ${diaPrevisao.chuvaFim || '—'}` : 'Sem chuva'}
+                      {diaPrevisao.chuvaInicio
+                        ? diaPrevisao.chuvaInicio === diaPrevisao.chuvaFim
+                          ? 'O dia todo (24h)'
+                          : `${diaPrevisao.chuvaInicio} às ${diaPrevisao.chuvaFim || '—'}`
+                        : 'Sem chuva'}
                     </Text>
                   </View>
                   <View style={styles.modalItem}>
@@ -496,19 +500,19 @@ const styles = StyleSheet.create({
   logoText: {
     color: '#fff',
     fontWeight: 'bold',
-    fontSize: 16,
+    fontSize: 18,
   },
   headerInfo: {
     flex: 1,
   },
   hello: {
     color: colors.text,
-    fontSize: 18,
+    fontSize: 21,
     fontWeight: 'bold',
   },
   subtitle: {
     color: colors.textSecondary,
-    fontSize: 13,
+    fontSize: 15,
     marginTop: 2,
   },
   card: {
@@ -521,7 +525,7 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     color: colors.text,
-    fontSize: 15,
+    fontSize: 17,
     fontWeight: 'bold',
     marginBottom: 8,
   },
@@ -549,7 +553,7 @@ const styles = StyleSheet.create({
   },
   chipText: {
     color: colors.textSecondary,
-    fontSize: 13,
+    fontSize: 15,
   },
   chipTextOn: {
     color: colors.active,
@@ -562,19 +566,19 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   tempoIcone: {
-    fontSize: 36,
+    fontSize: 41,
   },
   tempoInfo: {
     flex: 1,
   },
   tempoMaxMin: {
     color: colors.text,
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
   },
   tempoDetalhe: {
     color: colors.textSecondary,
-    fontSize: 12,
+    fontSize: 14,
     marginTop: 2,
   },
   tempoLista: {
@@ -597,26 +601,26 @@ const styles = StyleSheet.create({
   },
   tempoDiaLabel: {
     color: colors.textSecondary,
-    fontSize: 11,
+    fontSize: 13,
     textTransform: 'capitalize',
   },
   tempoDiaIcone: {
-    fontSize: 18,
+    fontSize: 21,
     marginVertical: 4,
   },
   tempoDiaTemp: {
     color: colors.text,
-    fontSize: 13,
+    fontSize: 15,
     fontWeight: 'bold',
   },
   tempoDiaChuva: {
     color: colors.info,
-    fontSize: 10,
+    fontSize: 12,
     marginTop: 2,
   },
   nota: {
     color: colors.textMuted,
-    fontSize: 12,
+    fontSize: 14,
     marginTop: 12,
   },
   kanbanButton: {
@@ -631,7 +635,7 @@ const styles = StyleSheet.create({
   kanbanButtonText: {
     color: colors.active,
     fontWeight: 'bold',
-    fontSize: 14,
+    fontSize: 16,
   },
   almoxarifadoButton: {
     backgroundColor: 'rgba(217, 119, 6, 0.12)',
@@ -645,7 +649,7 @@ const styles = StyleSheet.create({
   almoxarifadoButtonText: {
     color: colors.warning,
     fontWeight: 'bold',
-    fontSize: 14,
+    fontSize: 16,
   },
   relatorioButton: {
     backgroundColor: 'rgba(34, 197, 94, 0.1)',
@@ -659,7 +663,7 @@ const styles = StyleSheet.create({
   relatorioButtonText: {
     color: colors.success,
     fontWeight: 'bold',
-    fontSize: 14,
+    fontSize: 16,
   },
   documentacaoButton: {
     backgroundColor: 'rgba(56, 189, 248, 0.1)',
@@ -673,7 +677,7 @@ const styles = StyleSheet.create({
   documentacaoButtonText: {
     color: colors.info,
     fontWeight: 'bold',
-    fontSize: 14,
+    fontSize: 16,
   },
   logout: {
     backgroundColor: 'rgba(239, 68, 68, 0.1)',
@@ -687,7 +691,7 @@ const styles = StyleSheet.create({
   logoutText: {
     color: colors.danger,
     fontWeight: 'bold',
-    fontSize: 14,
+    fontSize: 16,
   },
   // Modal de detalhes da previsão do tempo (fix 1 — respeita a barra de
   // navegação do Android: paddingBottom vem da safe area, não é fixo)
@@ -705,12 +709,12 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     color: colors.text,
-    fontSize: 18,
+    fontSize: 21,
     fontWeight: 'bold',
   },
   modalFator: {
     color: colors.textSecondary,
-    fontSize: 14,
+    fontSize: 16,
     marginTop: 4,
     marginBottom: 16,
   },
@@ -729,11 +733,11 @@ const styles = StyleSheet.create({
   },
   modalItemLabel: {
     color: colors.textMuted,
-    fontSize: 11,
+    fontSize: 13,
   },
   modalItemValor: {
     color: colors.text,
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
     marginTop: 2,
   },
@@ -749,6 +753,6 @@ const styles = StyleSheet.create({
   modalFecharTexto: {
     color: colors.active,
     fontWeight: 'bold',
-    fontSize: 14,
+    fontSize: 16,
   },
 });

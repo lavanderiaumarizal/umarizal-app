@@ -234,12 +234,12 @@ const styles = StyleSheet.create({
   },
   title: {
     color: colors.text,
-    fontSize: 18,
+    fontSize: 21,
     fontWeight: 'bold',
   },
   total: {
     color: colors.textSecondary,
-    fontSize: 13,
+    fontSize: 15,
   },
   headerRight: {
     flexDirection: 'row',
@@ -256,7 +256,7 @@ const styles = StyleSheet.create({
   },
   atualizarText: {
     color: colors.active,
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: 'bold',
   },
   dataRow: {
@@ -273,10 +273,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   dataBtn: { paddingHorizontal: 14, paddingVertical: 4 },
-  dataBtnText: { color: colors.active, fontSize: 16, fontWeight: 'bold' },
+  dataBtnText: { color: colors.active, fontSize: 18, fontWeight: 'bold' },
   dataCentro: { alignItems: 'center' },
-  dataTexto: { color: colors.text, fontSize: 14, fontWeight: 'bold' },
-  dataDica: { color: colors.textMuted, fontSize: 10, marginTop: 1 },
+  dataTexto: { color: colors.text, fontSize: 16, fontWeight: 'bold' },
+  dataDica: { color: colors.textMuted, fontSize: 12, marginTop: 1 },
   center: {
     flex: 1,
     alignItems: 'center',
@@ -285,7 +285,7 @@ const styles = StyleSheet.create({
   },
   erro: {
     color: colors.danger,
-    fontSize: 14,
+    fontSize: 16,
     textAlign: 'center',
   },
   colunas: {
@@ -314,7 +314,7 @@ const styles = StyleSheet.create({
   },
   colunaLabel: {
     color: colors.text,
-    fontSize: 13,
+    fontSize: 15,
     fontWeight: 'bold',
   },
   contador: {
@@ -325,7 +325,7 @@ const styles = StyleSheet.create({
   },
   contadorText: {
     color: colors.active,
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: 'bold',
   },
   colunaBody: {
@@ -333,13 +333,13 @@ const styles = StyleSheet.create({
   },
   vazio: {
     color: colors.textMuted,
-    fontSize: 12,
+    fontSize: 14,
     textAlign: 'center',
     paddingVertical: 24,
   },
   rodape: {
     color: colors.textMuted,
-    fontSize: 12,
+    fontSize: 14,
     textAlign: 'center',
     padding: 16,
   },

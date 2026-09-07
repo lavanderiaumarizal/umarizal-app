@@ -130,12 +130,12 @@ const styles = StyleSheet.create({
   },
   check: {
     color: '#fff',
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: 'bold',
   },
   dot: {
     color: colors.primary,
-    fontSize: 10,
+    fontSize: 12,
   },
   linha: {
     flex: 1,
@@ -165,7 +165,7 @@ const styles = StyleSheet.create({
   },
   numero: {
     color: colors.textMuted,
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: 'bold',
     fontVariant: ['tabular-nums'],
   },
@@ -177,7 +177,7 @@ const styles = StyleSheet.create({
   },
   nome: {
     color: colors.textSecondary,
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '600',
   },
   nomeConcluida: {
@@ -189,12 +189,12 @@ const styles = StyleSheet.create({
   },
   meta: {
     color: colors.textMuted,
-    fontSize: 11,
+    fontSize: 13,
     marginTop: 2,
   },
   obs: {
     color: colors.textMuted,
-    fontSize: 11,
+    fontSize: 13,
     fontStyle: 'italic',
     marginTop: 2,
   },

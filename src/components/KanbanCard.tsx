@@ -11,21 +11,32 @@ import StatusBadge from './StatusBadge';
 import Preco from './Preco';
 import { ETAPA_NOME } from '../api/kanban';
 import type { KanbanItem } from '../api/kanban';
+import type { ItemResumo } from '../api/orcamentos';
+
+/** Área do item em m² (largura × comprimento × quantidade), formatada pt-BR */
+function areaItemM2(it: ItemResumo): string | null {
+  const l = Number(it.largura);
+  const c = Number(it.comprimento);
+  if (!l || !c) return null;
+  const area = l * c * (it.quantidade || 1);
+  return `${area.toLocaleString('pt-BR', { maximumFractionDigits: 2 })} m²`;
+}
 
 export default function KanbanCard({ item, onPress }: { item: KanbanItem; onPress?: () => void }) {
   const { orcamento, etapaAtual, etapaStatus } = item;
 
-  const servicos = orcamento.itens
-    .map((it) => {
-      const medidas =
-        it.largura && it.comprimento
-          ? ` (${it.largura}×${it.comprimento}m)`
-          : it.quantidade > 1
-            ? ` (×${it.quantidade})`
-            : '';
-      return `${it.servicoNome ?? 'Serviço'}${medidas}`;
-    })
-    .join(' · ');
+  // Um tapete por linha, com área em m² em vez das medidas largura×comprimento
+  const servicos = orcamento.itens.map((it) => {
+    const area = areaItemM2(it);
+    if (area) {
+      return it.quantidade > 1
+        ? `${it.servicoNome ?? 'Serviço'} — ${area} no total`
+        : `${it.servicoNome ?? 'Serviço'} — ${area}`;
+    }
+    return it.quantidade > 1
+      ? `${it.servicoNome ?? 'Serviço'} (×${it.quantidade})`
+      : (it.servicoNome ?? 'Serviço');
+  });
 
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7} disabled={!onPress}>
@@ -38,9 +49,14 @@ export default function KanbanCard({ item, onPress }: { item: KanbanItem; onPres
         {orcamento.cliente.nome}
       </Text>
 
-      <Text style={styles.servico} numberOfLines={2}>
-        {servicos || '—'}
-      </Text>
+      {/* Um tapete por linha, com área em m² em vez de medidas */}
+      <View style={styles.servicosWrap}>
+        {(servicos.length ? servicos : ['—']).map((s, i) => (
+          <Text key={i} style={styles.servico} numberOfLines={2}>
+            • {s}
+          </Text>
+        ))}
+      </View>
 
       {/* Preço — somente admin (backend filtra para os demais) */}
       {typeof (orcamento as any).valorTotal === 'number' && (
@@ -74,28 +90,31 @@ const styles = StyleSheet.create({
   },
   codigo: {
     color: colors.active,
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: 'bold',
   },
   cliente: {
     color: colors.text,
-    fontSize: 15,
+    fontSize: 17,
     fontWeight: 'bold',
+  },
+  servicosWrap: {
+    marginTop: 4,
+    gap: 2,
   },
   servico: {
     color: colors.textSecondary,
-    fontSize: 12,
-    marginTop: 4,
-    lineHeight: 17,
+    fontSize: 14,
+    lineHeight: 20,
   },
   etapa: {
     color: colors.textMuted,
-    fontSize: 11,
+    fontSize: 13,
     marginTop: 8,
   },
   valor: {
     color: colors.brandGold,
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: 'bold',
     marginTop: 8,
   },

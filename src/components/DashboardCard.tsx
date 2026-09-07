@@ -47,23 +47,23 @@ const styles = StyleSheet.create({
     minWidth: '47%',
   },
   icon: {
-    fontSize: 20,
+    fontSize: 23,
     marginBottom: 8,
   },
   value: {
     color: colors.text,
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: 'bold',
   },
   title: {
     color: colors.textSecondary,
-    fontSize: 12,
+    fontSize: 14,
     marginTop: 4,
-    lineHeight: 16,
+    lineHeight: 18,
   },
   subtitle: {
     color: colors.textMuted,
-    fontSize: 11,
+    fontSize: 13,
     marginTop: 4,
   },
 });

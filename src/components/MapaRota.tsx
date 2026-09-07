@@ -21,6 +21,7 @@ const STYLE_URL = 'https://tiles.openfreemap.org/styles/liberty';
 
 const COR_COLETA = '#22c55e'; // verde
 const COR_ENTREGA = '#3b82f6'; // azul
+const COR_DEPOT = '#f59e0b'; // âmbar — origem/destino (lavanderia)
 
 interface Props {
   waypoints: Waypoint[];
@@ -36,7 +37,19 @@ export default function MapaRota({ waypoints, geometry }: Props) {
       w.tipo !== 'DEPOT' && w.latitude != null && w.longitude != null,
   );
 
-  const rotaCoords = paradas.map((p) => [p.longitude, p.latitude] as [number, number]);
+  // Origem/destino (DEPOT = lavanderia) — agora visíveis no mapa
+  const depots = waypoints.filter(
+    (w): w is Waypoint & { latitude: number; longitude: number } =>
+      w.tipo === 'DEPOT' && w.latitude != null && w.longitude != null,
+  );
+
+  // Linha de referência: origem → paradas → destino (na ordem da rota)
+  const rotaCoords = waypoints
+    .filter(
+      (w): w is Waypoint & { latitude: number; longitude: number } =>
+        w.latitude != null && w.longitude != null,
+    )
+    .map((p) => [p.longitude, p.latitude] as [number, number]);
 
   // Traçado real: GeoJSON usa [lng, lat]
   const geometriaReal =
@@ -46,12 +59,32 @@ export default function MapaRota({ waypoints, geometry }: Props) {
           .map((c) => [c[1], c[0]] as [number, number])
       : null;
 
-  const center = paradas.length
+  const todos = [...paradas, ...depots];
+  const center = todos.length
     ? {
-        longitude: paradas.reduce((s, p) => s + p.longitude, 0) / paradas.length,
-        latitude: paradas.reduce((s, p) => s + p.latitude, 0) / paradas.length,
+        longitude: todos.reduce((s, p) => s + p.longitude, 0) / todos.length,
+        latitude: todos.reduce((s, p) => s + p.latitude, 0) / todos.length,
       }
     : { longitude: -46.6333, latitude: -23.5505 };
+
+  // Enquadra origem, destino e todas as paradas no mapa
+  const bounds =
+    todos.length >= 2
+      ? {
+          ne: [
+            Math.max(...todos.map((p) => p.longitude)),
+            Math.max(...todos.map((p) => p.latitude)),
+          ] as [number, number],
+          sw: [
+            Math.min(...todos.map((p) => p.longitude)),
+            Math.min(...todos.map((p) => p.latitude)),
+          ] as [number, number],
+          paddingLeft: 48,
+          paddingRight: 48,
+          paddingTop: 48,
+          paddingBottom: 48,
+        }
+      : null;
 
   function navegar(wp: Waypoint) {
     const url = `https://maps.google.com/?daddr=${wp.latitude},${wp.longitude}`;
@@ -68,6 +101,7 @@ export default function MapaRota({ waypoints, geometry }: Props) {
         <MapLibreGL.Camera
           center={[center.longitude, center.latitude]}
           zoom={11}
+          {...(bounds ?? {})}
         />
 
         {/* Traçado real pelas ruas (ORS); fallback: linha reta entre paradas */}
@@ -94,6 +128,30 @@ export default function MapaRota({ waypoints, geometry }: Props) {
             />
           </MapLibreGL.GeoJSONSource>
         ) : null}
+
+        {/* Origem/destino (lavanderia) — primeiro e último pontos da rota */}
+        {depots.map((wp, i) => (
+          <MapLibreGL.Marker
+            key={`depot-${wp.ordem}-${i}`}
+            id={`pin-depot-${wp.ordem}-${i}`}
+            lngLat={[wp.longitude, wp.latitude]}
+            onPress={() => setSelecionado(wp)}
+          >
+            <View
+              style={[
+                styles.pinDepot,
+                {
+                  borderColor:
+                    selecionado?.tipo === 'DEPOT' && selecionado?.ordem === wp.ordem
+                      ? '#fff'
+                      : 'transparent',
+                },
+              ]}
+            >
+              <Text style={styles.pinNumero}>{i === 0 ? '🏠' : '🏁'}</Text>
+            </View>
+          </MapLibreGL.Marker>
+        ))}
 
         {/* Markers das paradas */}
         {paradas.map((wp) => (
@@ -123,8 +181,9 @@ export default function MapaRota({ waypoints, geometry }: Props) {
         <View style={styles.calloutOverlay}>
           <View style={styles.callout}>
             <Text style={styles.calloutTitulo}>
-              {selecionado.ordem}. {selecionado.tipo === 'COLETA' ? '🟢 Coleta' : '🔵 Entrega'}
-              {selecionado.concluido ? ' ✅' : ''}
+              {selecionado.tipo === 'DEPOT'
+                ? `🏠 Lavanderia · ${selecionado.horarioChegada ? `saída/retorno ${selecionado.horarioChegada}` : 'origem/destino'}`
+                : `${selecionado.ordem}. ${selecionado.tipo === 'COLETA' ? '🟢 Coleta' : '🔵 Entrega'}${selecionado.concluido ? ' ✅' : ''}`}
             </Text>
             <Text style={styles.calloutEndereco} numberOfLines={2}>
               {selecionado.enderecoCompleto ?? 'Endereço não informado'}
@@ -155,8 +214,17 @@ const styles = StyleSheet.create({
   },
   pinNumero: {
     color: '#fff',
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: 'bold',
+  },
+  pinDepot: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: COR_DEPOT,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   calloutOverlay: {
     position: 'absolute',
@@ -177,9 +245,9 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     elevation: 8,
   },
-  calloutTitulo: { color: colors.text, fontSize: 14, fontWeight: 'bold' },
-  calloutEndereco: { color: colors.textSecondary, fontSize: 12, marginTop: 4 },
-  calloutHorario: { color: colors.textMuted, fontSize: 11, marginTop: 2 },
+  calloutTitulo: { color: colors.text, fontSize: 16, fontWeight: 'bold' },
+  calloutEndereco: { color: colors.textSecondary, fontSize: 14, marginTop: 4 },
+  calloutHorario: { color: colors.textMuted, fontSize: 13, marginTop: 2 },
   calloutBotao: {
     backgroundColor: colors.primary,
     borderRadius: 8,
@@ -187,5 +255,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 8,
   },
-  calloutBotaoText: { color: '#fff', fontWeight: 'bold', fontSize: 12 },
+  calloutBotaoText: { color: '#fff', fontWeight: 'bold', fontSize: 14 },
 });

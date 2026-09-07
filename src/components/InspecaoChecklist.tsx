@@ -129,8 +129,8 @@ function TextInputPlaceholder({
 }
 
 const styles = StyleSheet.create({
-  titulo: { color: colors.text, fontSize: 15, fontWeight: 'bold' },
-  sub: { color: colors.textSecondary, fontSize: 12, marginTop: 2, marginBottom: 10 },
+  titulo: { color: colors.text, fontSize: 17, fontWeight: 'bold' },
+  sub: { color: colors.textSecondary, fontSize: 14, marginTop: 2, marginBottom: 10 },
   itemRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -139,7 +139,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
-  itemLabel: { color: colors.text, fontSize: 14, fontWeight: '600' },
+  itemLabel: { color: colors.text, fontSize: 16, fontWeight: '600' },
   botoes: { flexDirection: 'row', gap: 8 },
   botaoStatus: {
     borderRadius: 8,
@@ -151,10 +151,10 @@ const styles = StyleSheet.create({
   },
   botaoOk: { backgroundColor: colors.success, borderColor: colors.success },
   botaoNok: { backgroundColor: colors.danger, borderColor: colors.danger },
-  botaoStatusText: { color: colors.textSecondary, fontWeight: 'bold', fontSize: 13 },
+  botaoStatusText: { color: colors.textSecondary, fontWeight: 'bold', fontSize: 15 },
   botaoStatusTextOn: { color: '#fff' },
   botaoStatusTextNok: { color: '#fff' },
-  aviso: { color: colors.danger, fontSize: 12, marginTop: 10 },
+  aviso: { color: colors.danger, fontSize: 14, marginTop: 10 },
   obs: {
     backgroundColor: colors.background,
     borderWidth: 1,
@@ -165,7 +165,7 @@ const styles = StyleSheet.create({
     minHeight: 56,
     marginTop: 12,
     textAlignVertical: 'top',
-    fontSize: 13,
+    fontSize: 15,
   },
   confirmar: {
     backgroundColor: colors.success,
@@ -175,5 +175,5 @@ const styles = StyleSheet.create({
     marginTop: 14,
   },
   confirmarDisabled: { backgroundColor: colors.surfaceAlt, opacity: 0.6 },
-  confirmarText: { color: '#fff', fontWeight: 'bold', fontSize: 13 },
+  confirmarText: { color: '#fff', fontWeight: 'bold', fontSize: 15 },
 });
