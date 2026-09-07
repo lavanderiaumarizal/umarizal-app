@@ -5,7 +5,8 @@
  * e SEM conta Google. (Opção B — escolhida por não exigir configuração.)
  *
  * - Markers custom: COLETA 🟢 · ENTREGA 🔵 (com número da ordem)
- * - Linha conectando as paradas na ordem da rota (GeoJSON LineString)
+ * - Traçado REAL pelas ruas (geometry [[lat,lng]] do ORS) quando disponível;
+ *   fallback: linha reta entre as paradas
  * - Callout em overlay ao tocar num marker + botão "Navegar"
  */
 
@@ -23,9 +24,11 @@ const COR_ENTREGA = '#3b82f6'; // azul
 
 interface Props {
   waypoints: Waypoint[];
+  /** Traçado real pelas ruas (pares [lat, lng]) — do ORS via backend */
+  geometry?: number[][] | null;
 }
 
-export default function MapaRota({ waypoints }: Props) {
+export default function MapaRota({ waypoints, geometry }: Props) {
   const [selecionado, setSelecionado] = useState<Waypoint | null>(null);
 
   const paradas = waypoints.filter(
@@ -34,6 +37,14 @@ export default function MapaRota({ waypoints }: Props) {
   );
 
   const rotaCoords = paradas.map((p) => [p.longitude, p.latitude] as [number, number]);
+
+  // Traçado real: GeoJSON usa [lng, lat]
+  const geometriaReal =
+    geometry && geometry.length > 1
+      ? geometry
+          .filter((c) => Array.isArray(c) && c.length === 2)
+          .map((c) => [c[1], c[0]] as [number, number])
+      : null;
 
   const center = paradas.length
     ? {
@@ -59,8 +70,19 @@ export default function MapaRota({ waypoints }: Props) {
           zoom={11}
         />
 
-        {/* Linha da rota */}
-        {rotaCoords.length > 1 && (
+        {/* Traçado real pelas ruas (ORS); fallback: linha reta entre paradas */}
+        {geometriaReal ? (
+          <MapLibreGL.GeoJSONSource
+            id="rota-real"
+            data={{ type: 'LineString', coordinates: geometriaReal }}
+          >
+            <MapLibreGL.Layer
+              id="rota-real-camada"
+              type="line"
+              style={{ lineColor: colors.primary, lineWidth: 4, lineOpacity: 0.95 }}
+            />
+          </MapLibreGL.GeoJSONSource>
+        ) : rotaCoords.length > 1 ? (
           <MapLibreGL.GeoJSONSource
             id="rota-linha"
             data={{ type: 'LineString', coordinates: rotaCoords }}
@@ -71,7 +93,7 @@ export default function MapaRota({ waypoints }: Props) {
               style={{ lineColor: colors.primary, lineWidth: 3, lineOpacity: 0.9 }}
             />
           </MapLibreGL.GeoJSONSource>
-        )}
+        ) : null}
 
         {/* Markers das paradas */}
         {paradas.map((wp) => (

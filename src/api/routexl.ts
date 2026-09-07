@@ -45,6 +45,8 @@ export interface RotaDoDia {
   totalDurationMinutes: number | null;
   allWaypoints: Waypoint[];
   stops: Stop[];
+  /** Traçado real pelas ruas (pares [lat, lng]) — gerado pelo ORS */
+  geometry?: number[][] | null;
 }
 
 /** GET /api/routexl/rota-do-dia?data=YYYY-MM-DD (B22/B23) */

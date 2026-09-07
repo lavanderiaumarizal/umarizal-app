@@ -174,7 +174,7 @@ export default function RotaDoDiaScreen() {
       setMostrarHorarioSaida(false);
     } catch (err: any) {
       const msgBackend = err?.response?.data?.error?.message || err?.response?.data?.message;
-      setErro(msgBackend || 'Não foi possível gerar a rota (verifique o limite do RouteXL).');
+      setErro(msgBackend || 'Não foi possível gerar a rota.');
     } finally {
       setGerando(false);
     }
@@ -224,6 +224,7 @@ export default function RotaDoDiaScreen() {
           type: w.tipo,
         })),
         rawResponse: {},
+        geometry: rota.geometry ?? null,
       };
       const stops = stopsDaRota(rota.stops);
       await saveRota(fmtData(data), otimizada, stops);
@@ -253,7 +254,7 @@ export default function RotaDoDiaScreen() {
       setMostrarHorarioSaida(false);
     } catch (err: any) {
       const msgBackend = err?.response?.data?.error?.message || err?.response?.data?.message;
-      setErro(msgBackend || 'Não foi possível re-otimizar a rota (verifique o limite do RouteXL).');
+      setErro(msgBackend || 'Não foi possível re-otimizar a rota.');
     } finally {
       setGerando(false);
     }
@@ -629,7 +630,9 @@ export default function RotaDoDiaScreen() {
               <Text style={styles.mapaFechar}>Fechar ✕</Text>
             </TouchableOpacity>
           </View>
-          {rota ? <MapaRota waypoints={rota.allWaypoints} /> : null}
+          {rota ? (
+            <MapaRota waypoints={rota.allWaypoints} geometry={rota.geometry} />
+          ) : null}
         </View>
       </Modal>
 
