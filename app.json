@@ -2,7 +2,7 @@
   "expo": {
     "name": "Umarizal",
     "slug": "umarizal-app",
-    "version": "1.0.1",
+    "version": "1.2.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
@@ -12,7 +12,7 @@
     },
     "android": {
       "package": "com.umarizal.app",
-      "versionCode": 2,
+      "versionCode": 3,
       "adaptiveIcon": {
         "backgroundColor": "#111827",
         "foregroundImage": "./assets/android-icon-foreground.png",

@@ -4,6 +4,22 @@
 > **Formato:** baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/)
 > **Nota:** tarefas de backend (B1–B23) são versionadas no repositório `backend/`
 
+## [1.2.0] — 2026-09-08 · ORS: qualidade de rota e ordenação manual
+
+### ✨ Adicionado
+- F14.5: **Ordenação manual de paradas** na Rota do Dia — botão "✏️ Reordenar"
+  entra no modo de edição com ▲▼ por parada; "✅ Aplicar ordem" recalcula
+  horários/distância/geomomenta via ORS preservando a ordem escolhida
+  (`skipOptimisation: true`) e salva
+- Botão **🔄 Flip** mantido ao lado do novo modo de edição (linha única:
+  Reordenar · Flip · Salvar)
+
+### 🔄 Alterado
+- Motor de roteirização agora é **somente o ORS self-hosted** — RouteXL
+  removido do sistema (sem fallback)
+- Backend com solver TSP melhorado (Held-Karp exato até 15 paradas +
+  multi-partida/2-opt/Or-opt) — corrige "caminhos sem lógica" de dias cheios
+
 ## [1.1.0] — 2026-08-10 · Melhorias da orquestração dos 48 agentes
 
 ### ✨ Adicionado

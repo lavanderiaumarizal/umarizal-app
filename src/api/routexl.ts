@@ -99,14 +99,14 @@ export async function saveRota(date: string, optimizedRoute: unknown, stops: unk
   return data.data;
 }
 
-/** CEP só dígitos → XXXXX-XXX (formato usado no endereço do RouteXL) */
+/** CEP só dígitos → XXXXX-XXX (formato usado no endereço das paradas) */
 function formatarCep(cep?: string | null): string {
   const digitos = (cep ?? '').replace(/\D/g, '');
   return digitos.length === 8 ? `${digitos.slice(0, 5)}-${digitos.slice(5)}` : '';
 }
 
 /**
- * Endereço para o RouteXL (mesmo formato do painel admin):
+ * Endereço para a otimização de rota (mesmo formato do painel admin):
  * "Rua X, N - CEP XXXXX-XXX". Complemento NÃO entra — é apenas informativo
  * (exibido na parada e no detalhe do orçamento).
  */

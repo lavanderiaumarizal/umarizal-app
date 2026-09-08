@@ -120,8 +120,11 @@ export default function RotaDoDiaScreen() {
   // quanto pelo "Re-otimizar" (paradas atuais), como no painel admin
   const [mostrarHorarioSaida, setMostrarHorarioSaida] = useState(false);
   const [horarioSaida, setHorarioSaida] = useState('08:00');
+  // ✏️ Ordenação manual — modo de edição com ▲▼ (ordem local até aplicar)
+  const [editandoOrdem, setEditandoOrdem] = useState(false);
+  const [ordemEdicao, setOrdemEdicao] = useState<Stop[]>([]);
 
-  /** Converte as paradas carregadas para o formato do RouteXL (endereço limpo + código) */
+  /** Converte as paradas carregadas para o formato do endpoint de otimização (endereço limpo + código) */
   function stopsDaRota(paradas: Stop[]) {
     return paradas.map((s) => {
       const logradouro = s.endereco?.logradouro ?? '';
@@ -168,7 +171,7 @@ export default function RotaDoDiaScreen() {
     setRefreshing(false);
   }, [data, carregar]);
 
-  /** F14.2 — Gerar rota: eventos do dia → RouteXL optimize → save-route
+  /** F14.2 — Gerar rota: eventos do dia → optimize (ORS) → save-route
    *  Mesmo fluxo do painel admin: endereço "Rua, N - CEP" (sem complemento),
    *  inclui endereços FIXO e usa o horário de saída da lavanderia.
    */
@@ -205,6 +208,51 @@ export default function RotaDoDiaScreen() {
     } catch (err: any) {
       const msgBackend = err?.response?.data?.error?.message || err?.response?.data?.message;
       setErro(msgBackend || 'Não foi possível gerar a rota.');
+    } finally {
+      setGerando(false);
+    }
+  }
+
+  /** ✏️ Ordenação manual — entra no modo de edição com a ordem atual das paradas */
+  function iniciarEdicaoOrdem() {
+    if (!rota || rota.stops.length < 2) return;
+    setOrdemEdicao([...rota.stops]);
+    setEditandoOrdem(true);
+  }
+
+  /** Move uma parada dentro da ordem em edição (▲▼) */
+  function moverParadaEdicao(idx: number, delta: number) {
+    setOrdemEdicao((atual) => {
+      const novo = [...atual];
+      const alvo = idx + delta;
+      if (alvo < 0 || alvo >= novo.length) return atual;
+      const [movida] = novo.splice(idx, 1);
+      novo.splice(alvo, 0, movida);
+      return novo;
+    });
+  }
+
+  /** ✏️ Aplica a ordem manual: optimize (skipOptimisation) → save → recarrega */
+  async function aplicarOrdemManual() {
+    if (ordemEdicao.length === 0) return;
+    const m = horarioSaida.match(/^(\d{1,2}):(\d{2})$/);
+    const minutos = m ? parseInt(m[1], 10) * 60 + parseInt(m[2], 10) : undefined;
+    setGerando(true);
+    setErro(null);
+    try {
+      const stops = stopsDaRota(ordemEdicao);
+      const otimizada = await optimizeRota(stops, {
+        date: fmtData(data),
+        startTimeMinutes: minutos,
+        skipOptimisation: true,
+      });
+      await saveRota(fmtData(data), otimizada, stops);
+      setEditandoOrdem(false);
+      setOrdemEdicao([]);
+      await carregar(data);
+    } catch (err: any) {
+      const msgBackend = err?.response?.data?.error?.message || err?.response?.data?.message;
+      setErro(msgBackend || 'Não foi possível aplicar a ordem manual.');
     } finally {
       setGerando(false);
     }
@@ -533,33 +581,71 @@ export default function RotaDoDiaScreen() {
           </View>
           <View style={styles.rotaAcoes}>
             <TouchableOpacity
-              style={[styles.botaoFlip, (gerando || recalculando) && styles.botaoDisabled]}
-              onPress={() => void flipRota()}
+              style={[
+                styles.botaoFlip,
+                (gerando || recalculando) && styles.botaoDisabled,
+                editandoOrdem && styles.botaoFlipAtivo,
+              ]}
+              onPress={() =>
+                editandoOrdem
+                  ? (setEditandoOrdem(false), setOrdemEdicao([]))
+                  : iniciarEdicaoOrdem()
+              }
               disabled={gerando || recalculando}
             >
-              <Text style={styles.botaoFlipText}>🔄 Flip (inverter ordem)</Text>
+              <Text style={styles.botaoFlipText}>
+                {editandoOrdem ? '✕ Cancelar ordem' : '✏️ Reordenar'}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.botaoFlip, (gerando || recalculando || editandoOrdem) && styles.botaoDisabled]}
+              onPress={() => void flipRota()}
+              disabled={gerando || recalculando || editandoOrdem}
+            >
+              <Text style={styles.botaoFlipText}>🔄 Flip</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.botaoSalvar, (gerando || recalculando) && styles.botaoDisabled]}
               onPress={() => void salvarRotaAtual()}
               disabled={gerando || recalculando}
             >
-              <Text style={styles.botaoSalvarText}>💾 Salvar Rota</Text>
+              <Text style={styles.botaoSalvarText}>💾 Salvar</Text>
             </TouchableOpacity>
           </View>
 
-          {rota.stops.map((stop) => {
-            const concluida = stop.concluido;
+          {/* ✏️ Modo de ordenação manual — dica + aplicar */}
+          {editandoOrdem && (
+            <View style={styles.edicaoOrdemBox}>
+              <Text style={styles.edicaoOrdemDica}>
+                ✏️ Use ▲▼ para ajustar a ordem. “Aplicar” recalcula os horários com
+                o ORS preservando esta ordem.
+              </Text>
+              <TouchableOpacity
+                style={[styles.botaoAplicarOrdem, gerando && styles.botaoDisabled]}
+                onPress={() => void aplicarOrdemManual()}
+                disabled={gerando}
+              >
+                {gerando ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.botaoAplicarOrdemText}>✅ Aplicar ordem</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {(editandoOrdem ? ordemEdicao : rota.stops).map((stop, idx, arr) => {
+            const concluida = !editandoOrdem && stop.concluido;
             const ehColeta = stop.tipo === 'COLETA';
             // Endereços fixos não têm ordem de serviço — sem botões de confirmação,
             // mas com botão de mapa (navegação pelo endereço)
             const ehFixo = (stop.orcamentoId ?? '').startsWith('fixo-');
             return (
               <TouchableOpacity
-                key={stop.ordem}
+                key={`${stop.ordem}-${stop.orcamentoId ?? idx}`}
                 style={[styles.parada, concluida && styles.paradaConcluida]}
                 onPress={() => {
-                  if (stop.orcamentoId && !ehFixo) {
+                  if (!editandoOrdem && stop.orcamentoId && !ehFixo) {
                     navigation.navigate('Detalhes', { orcamentoId: stop.orcamentoId });
                   }
                 }}
@@ -567,11 +653,11 @@ export default function RotaDoDiaScreen() {
               >
                 <View style={styles.paradaHeader}>
                   <View style={[styles.ordemBadge, concluida && styles.ordemBadgeConcluida]}>
-                    {concluida ? <Text style={styles.check}>✓</Text> : <Text style={styles.ordemText}>{stop.ordem}</Text>}
+                    {concluida ? <Text style={styles.check}>✓</Text> : <Text style={styles.ordemText}>{idx + 1}</Text>}
                   </View>
                   <View style={styles.paradaInfo}>
                     <Text style={[styles.paradaTipo, { color: ehColeta ? colors.brandLime : colors.brandGold }]}>
-                      {ehColeta ? 'COLETA' : 'ENTREGA'} · {stop.horarioChegada ?? '--:--'}
+                      {ehColeta ? 'COLETA' : 'ENTREGA'} · {editandoOrdem ? '—' : (stop.horarioChegada ?? '--:--')}
                     </Text>
                     {stop.cliente?.nome ? (
                       <Text style={styles.paradaCliente} numberOfLines={1}>👤 {stop.cliente.nome}</Text>
@@ -579,14 +665,32 @@ export default function RotaDoDiaScreen() {
                     <Text style={styles.paradaEndereco} numberOfLines={2}>
                       {limparEndereco(stop.endereco?.logradouro ?? 'Endereço não informado')}
                     </Text>
-                    {/* Complemento: apenas informativo (apto, bloco...) — não vai ao RouteXL */}
+                    {/* Complemento: apenas informativo (apto, bloco...) — não vai à rota */}
                     {stop.cliente?.complemento ? (
                       <Text style={styles.paradaComplemento} numberOfLines={1}>🚪 {stop.cliente.complemento}</Text>
                     ) : null}
                   </View>
+                  {editandoOrdem && (
+                    <View style={styles.edicaoBotoes}>
+                      <TouchableOpacity
+                        style={[styles.edicaoBtn, idx === 0 && styles.edicaoBtnOff]}
+                        onPress={() => moverParadaEdicao(idx, -1)}
+                        disabled={idx === 0}
+                      >
+                        <Text style={styles.edicaoBtnText}>▲</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[styles.edicaoBtn, idx === arr.length - 1 && styles.edicaoBtnOff]}
+                        onPress={() => moverParadaEdicao(idx, 1)}
+                        disabled={idx === arr.length - 1}
+                      >
+                        <Text style={styles.edicaoBtnText}>▼</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
                 </View>
 
-                {!concluida && (
+                {!editandoOrdem && !concluida && (
                   <View style={styles.acoes}>
                     <TouchableOpacity style={styles.botaoMaps} onPress={() => navegarParada(stop)}>
                       <Text style={styles.botaoMapsText}>📍 Maps</Text>
@@ -872,6 +976,36 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   botaoFlipText: { color: colors.active, fontWeight: 'bold', fontSize: 14 },
+  botaoFlipAtivo: { backgroundColor: colors.brandGold, borderColor: colors.brandGold },
+  edicaoOrdemBox: {
+    backgroundColor: colors.activeBg,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 12,
+  },
+  edicaoOrdemDica: { color: colors.textSecondary, fontSize: 13, marginBottom: 10, lineHeight: 18 },
+  botaoAplicarOrdem: {
+    backgroundColor: colors.success,
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  botaoAplicarOrdemText: { color: '#fff', fontWeight: 'bold', fontSize: 15 },
+  edicaoBotoes: { gap: 4 },
+  edicaoBtn: {
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    borderRadius: 6,
+    width: 34,
+    height: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  edicaoBtnOff: { opacity: 0.3 },
+  edicaoBtnText: { color: colors.active, fontWeight: 'bold', fontSize: 13 },
   botaoAcaoRota: {
     flex: 1,
     backgroundColor: colors.activeBg,
