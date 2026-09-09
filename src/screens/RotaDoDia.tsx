@@ -2,15 +2,17 @@
  * screens/RotaDoDia.tsx — Rota do Dia do motorista (F14)
  *
  * - Seletor de data (◀ ▶ + Hoje)
- * - Carrega rota: GET /api/routexl/rota-do-dia (B22/B23)
+ * - Carrega rota: GET /api/logistica/rota-do-dia (B22/B23)
  * - Sem rota salva → mensagem + "🔄 Gerar Rota" (eventos → optimize → save-route)
  * - Paradas ordenadas: ordem, tipo, endereço, horário, status
  * - Paradas concluídas: check verde + desabilitadas (sem botões)
- * - Botões por parada: 📍 Maps (deep link) · Coletar (B9) / Entregar (B10)
+ * - Botões por parada: 🧭 Navegar (in-app, ORS) · Coletar (B9) / Entregar (B10)
+ * - Rastreamento GPS em tempo real (foreground + background — o cliente
+ *   acompanha a partir do horário de saída, regra do backend)
  * - Pull-to-refresh
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -21,7 +23,6 @@ import {
   RefreshControl,
   Modal,
   TextInput,
-  Linking,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -36,10 +37,22 @@ import {
   limparEndereco,
   type RotaDoDia,
   type Stop,
-} from '../api/routexl';
+} from '../api/rotas';
+import {
+  iniciarRastreamento,
+  finalizarRastreamento,
+  recalcularDaPosicao,
+} from '../api/rastreamento';
+import {
+  iniciarRastreamentoFundo,
+  pararRastreamentoFundo,
+  estaRastreando,
+  definirRouteIdAtual,
+} from '../tarefa/rastreamentoFundo';
 import { coletaRealizada, entregaRealizada } from '../api/orcamentos';
 import CameraCapture from '../components/CameraCapture';
 import MapaRota from '../components/MapaRota';
+import NavegacaoRota from '../components/NavegacaoRota';
 import type { RootStackParamList } from '../navigation/AppNavigator';
 
 /** Formata YYYY-MM-DD local */
@@ -123,6 +136,14 @@ export default function RotaDoDiaScreen() {
   // ✏️ Ordenação manual — modo de edição com ▲▼ (ordem local até aplicar)
   const [editandoOrdem, setEditandoOrdem] = useState(false);
   const [ordemEdicao, setOrdemEdicao] = useState<Stop[]>([]);
+
+  // ═══ Rastreamento GPS em tempo real ═══
+  const [rastreando, setRastreando] = useState(false);
+  const [rastreandoMsg, setRastreandoMsg] = useState('');
+  const [navegandoStop, setNavegandoStop] = useState<Stop | null>(null);
+  const posicaoRef = useRef<{ lat: number; lng: number } | null>(null);
+  const autoStartRef = useRef<string | null>(null); // dataStr já tentada p/ auto-start
+  const recalcTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   /** Converte as paradas carregadas para o formato do endpoint de otimização (endereço limpo + código) */
   function stopsDaRota(paradas: Stop[]) {
@@ -338,10 +359,10 @@ export default function RotaDoDiaScreen() {
     }
   }
 
-  /** ⏱️ Pós-coleta/entrega — recalcula os tempos da rota com o ORS (motor ativo)
-   *  SEM alterar a ordem estabelecida (ordem normal ou flip são preservadas —
-   *  skipOptimisation). As paradas pendentes são reancoradas no "agora" para
-   *  que o Portal do Cliente sempre veja um horário previsto atualizado.
+  /** ⏱️ Pós-coleta/entrega — recálculo das previsões via ORS a partir da
+   *  posição ATUAL do motorista (GPS). O backend reancora as paradas pendentes
+   *  no "agora real" e atualiza horários/geomomenta — o Portal do Cliente e o
+   *  painel passam a ver previsões honestas. Fallback: recálculo local antigo.
    *  Concluídas mantêm o horário original e a saída real do depot é preservada.
    */
   async function recalcularTemposRota(base?: RotaDoDia | null) {
@@ -350,6 +371,18 @@ export default function RotaDoDiaScreen() {
     if (!atual.stops.some((s) => !s.concluido)) return; // rota concluída — nada a atualizar
     setRecalculando(true);
     try {
+      // Preferência: recálculo pela posição GPS real (endpoint de rastreamento)
+      const pos = posicaoRef.current;
+      if (pos) {
+        try {
+          await recalcularDaPosicao(atual.id, pos.lat, pos.lng);
+          await carregar(data);
+          return;
+        } catch {
+          // cai para o recálculo local abaixo
+        }
+      }
+
       const stops = stopsDaRota(atual.stops);
       const otimizada = await optimizeRota(stops, {
         date: fmtData(data),
@@ -412,16 +445,103 @@ export default function RotaDoDiaScreen() {
     }
   }
 
-  /** Abre o Google Maps na parada (endereço sem o prefixo do código).
-   *  Paradas FIXO: o backend já envia o endereço REAL do cadastro — nunca
-   *  "FIXO-Nome" (fix 4). */
+  /** 🧭 Navegação IN-APP (turn-by-turn do ORS — sem Google Maps, sem enviar
+   *  a posição do motorista a terceiros). Paradas FIXO: o backend já envia o
+   *  endereço REAL do cadastro — nunca "FIXO-Nome" (fix 4). */
   function navegarParada(stop: Stop) {
-    const logradouro = stop.endereco?.logradouro ?? '';
-    const ehFixo = (stop.orcamentoId ?? '').startsWith('fixo-');
-    const endereco = ehFixo ? logradouro : limparEndereco(logradouro);
-    const url = `https://maps.google.com/?daddr=${encodeURIComponent(endereco)}`;
-    void Linking.openURL(url).catch(() => undefined);
+    setNavegandoStop(stop);
   }
+
+  // ═══ Rastreamento GPS ═══
+
+  /** Extrai os minutos de um "HH:MM" */
+  function minutosDeHorario(hhmm: string | null): number | null {
+    if (!hhmm) return null;
+    const m = /^(\d{1,2}):(\d{2})$/.exec(hhmm);
+    return m ? parseInt(m[1], 10) * 60 + parseInt(m[2], 10) : null;
+  }
+
+  /** Horário de saída da rota (DEPOT inicial) */
+  function horarioSaidaDaRota(r: RotaDoDia | null): string | null {
+    if (!r) return null;
+    return r.allWaypoints.find((w) => w.tipo === 'DEPOT')?.horarioChegada ?? null;
+  }
+
+  /** Inicia o rastreamento: sessão no backend + foreground service Android */
+  async function iniciarTrackingRota(r: RotaDoDia) {
+    try {
+      await iniciarRastreamento(r.id);
+      const permissoes = await iniciarRastreamentoFundo(r.id);
+      definirRouteIdAtual(r.id);
+      setRastreando(true);
+      setRastreandoMsg(
+        permissoes.background
+          ? 'Cliente acompanha em tempo real (funciona com o app fechado)'
+          : 'Rastreando com o app aberto — permita "tempo todo" para continuar em segundo plano',
+      );
+    } catch (e: any) {
+      if (e?.message === 'PERMISSAO_NEGADA') {
+        setRastreandoMsg('Permissão de localização negada — o cliente não poderá acompanhar');
+      } else {
+        setRastreandoMsg('');
+      }
+    }
+  }
+
+  /** Encerra o rastreamento (sessão + serviço de fundo) */
+  async function pararTrackingRota() {
+    try {
+      await finalizarRastreamento(rota?.id);
+      await pararRastreamentoFundo();
+    } finally {
+      setRastreando(false);
+      setRastreandoMsg('');
+    }
+  }
+
+  /** 🚦 AUTO-START: inicia o rastreamento no horário de saída da rota — o
+   *  mapa do cliente fica disponível exatamente a partir desse horário. */
+  useEffect(() => {
+    if (!rota || loading) return;
+    const dataStr = fmtData(data);
+    if (autoStartRef.current === dataStr) return; // já tentado nesta data
+    const saida = horarioSaidaDaRota(rota);
+    const saidaMin = minutosDeHorario(saida);
+    if (saidaMin == null) return;
+    if (agoraMinutosSP() < saidaMin) return; // ainda antes da saída
+    if (rota.stops.every((s) => s.concluido)) return; // rota concluída
+    autoStartRef.current = dataStr;
+    void (async () => {
+      const jaAtivo = await estaRastreando();
+      if (!jaAtivo) {
+        await iniciarTrackingRota(rota);
+      } else {
+        definirRouteIdAtual(rota.id);
+        setRastreando(true);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rota, loading]);
+
+  /** 🔄 Recálculo periódico das previsões (a cada 5 min com tracking ativo) */
+  useEffect(() => {
+    if (recalcTimerRef.current) clearInterval(recalcTimerRef.current);
+    if (!rastreando) return;
+    recalcTimerRef.current = setInterval(() => {
+      void recalcularTemposRota();
+    }, 5 * 60 * 1000);
+    return () => {
+      if (recalcTimerRef.current) clearInterval(recalcTimerRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rastreando]);
+
+  /** Limpa timers/watchers ao sair da tela */
+  useEffect(() => {
+    return () => {
+      if (recalcTimerRef.current) clearInterval(recalcTimerRef.current);
+    };
+  }, []);
 
   /** Ajusta o horário de saída em minutos (steppers do modal interativo — fix 2) */
   function ajustarHorario(delta: number) {
@@ -555,6 +675,46 @@ export default function RotaDoDiaScreen() {
                   </Text>
                 )}
               </>
+            );
+          })()}
+
+          {/* 📡 Rastreamento em tempo real — o cliente vê o mapa a partir do horário de saída */}
+          {(() => {
+            const saida = horarioSaidaDaRota(rota);
+            const antesDaSaida =
+              saida != null && agoraMinutosSP() < (minutosDeHorario(saida) ?? 0);
+            return (
+              <View style={styles.trackingBox}>
+                {rastreando ? (
+                  <>
+                    <Text style={styles.trackingTitulo}>🟢 Rastreamento ativo</Text>
+                    {rastreandoMsg ? <Text style={styles.trackingInfo}>{rastreandoMsg}</Text> : null}
+                    <TouchableOpacity
+                      style={styles.trackingParar}
+                      onPress={() => void pararTrackingRota()}
+                      disabled={recalculando}
+                    >
+                      <Text style={styles.trackingPararTexto}>⏹ Encerrar rastreamento</Text>
+                    </TouchableOpacity>
+                  </>
+                ) : (
+                  <>
+                    <Text style={styles.trackingTitulo}>📍 Rastreamento parado</Text>
+                    {antesDaSaida && saida ? (
+                      <Text style={styles.trackingInfo}>
+                        ⏰ Inicia automaticamente às {saida} — aí o cliente passa a acompanhar
+                      </Text>
+                    ) : null}
+                    <TouchableOpacity
+                      style={styles.trackingIniciar}
+                      onPress={() => rota && void iniciarTrackingRota(rota)}
+                      disabled={loading || rota.stops.every((s) => s.concluido)}
+                    >
+                      <Text style={styles.trackingIniciarTexto}>▶ Iniciar Rota (GPS)</Text>
+                    </TouchableOpacity>
+                  </>
+                )}
+              </View>
             );
           })()}
 
@@ -693,7 +853,7 @@ export default function RotaDoDiaScreen() {
                 {!editandoOrdem && !concluida && (
                   <View style={styles.acoes}>
                     <TouchableOpacity style={styles.botaoMaps} onPress={() => navegarParada(stop)}>
-                      <Text style={styles.botaoMapsText}>📍 Maps</Text>
+                      <Text style={styles.botaoMapsText}>🧭 Navegar</Text>
                     </TouchableOpacity>
                     {!ehFixo &&
                       (ehColeta ? (
@@ -920,6 +1080,33 @@ export default function RotaDoDiaScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* 🧭 Navegação in-app (turn-by-turn ORS — sem Google Maps) */}
+      <Modal
+        visible={navegandoStop !== null}
+        animationType="slide"
+        onRequestClose={() => setNavegandoStop(null)}
+      >
+        {navegandoStop
+          ? (() => {
+              // Coordenadas vêm do waypoint da rota (mesma ordem)
+              const wp = rota?.allWaypoints.find((w) => w.ordem === navegandoStop.ordem);
+              return (
+                <NavegacaoRota
+                  destino={{
+                    lat: wp?.latitude ?? null,
+                    lng: wp?.longitude ?? null,
+                    endereco: limparEndereco(navegandoStop.endereco?.logradouro ?? ''),
+                    titulo: `${navegandoStop.tipo === 'COLETA' ? 'Coleta' : 'Entrega'} · ${
+                      navegandoStop.cliente?.nome ?? navegandoStop.codigo ?? ''
+                    }`,
+                  }}
+                  onFechar={() => setNavegandoStop(null)}
+                />
+              );
+            })()
+          : null}
+      </Modal>
     </View>
   );
 }
@@ -955,6 +1142,33 @@ const styles = StyleSheet.create({
   lista: { padding: 12, paddingBottom: 32 },
   resumo: { color: colors.textSecondary, fontSize: 14, marginBottom: 4 },
   resumoHorarios: { color: colors.textSecondary, fontSize: 14, fontWeight: '600', marginBottom: 10 },
+  trackingBox: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 10,
+  },
+  trackingTitulo: { color: colors.text, fontSize: 14, fontWeight: 'bold' },
+  trackingInfo: { color: colors.textSecondary, fontSize: 12, marginTop: 4, lineHeight: 17 },
+  trackingIniciar: {
+    backgroundColor: colors.primary,
+    borderRadius: 8,
+    paddingVertical: 9,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  trackingIniciarTexto: { color: '#fff', fontWeight: 'bold', fontSize: 13 },
+  trackingParar: {
+    borderWidth: 1,
+    borderColor: colors.danger,
+    borderRadius: 8,
+    paddingVertical: 8,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  trackingPararTexto: { color: colors.danger, fontWeight: 'bold', fontSize: 13 },
   botaoMapa: {
     backgroundColor: colors.surface,
     borderWidth: 1,

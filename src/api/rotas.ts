@@ -1,5 +1,5 @@
 /**
- * api/routexl.ts — Endpoints de rota do dia (B22/B23)
+ * api/rotas.ts — Endpoints de rota do dia (B22/B23)
  */
 
 import api from './client';
@@ -49,9 +49,9 @@ export interface RotaDoDia {
   geometry?: number[][] | null;
 }
 
-/** GET /api/routexl/rota-do-dia?data=YYYY-MM-DD (B22/B23) */
+/** GET /api/logistica/rota-do-dia?data=YYYY-MM-DD (B22/B23) */
 export async function getRotaDoDia(data: string): Promise<RotaDoDia | null> {
-  const { data: res } = await api.get<ApiSuccessResponse<RotaDoDia | null>>('/routexl/rota-do-dia', {
+  const { data: res } = await api.get<ApiSuccessResponse<RotaDoDia | null>>('/logistica/rota-do-dia', {
     params: { data },
   });
   return res.data;
@@ -87,15 +87,15 @@ export async function getEventosDia(data: string): Promise<EventoCalendario[]> {
   return res.data;
 }
 
-/** POST /api/routexl/optimize — otimiza a rota do dia */
+/** POST /api/logistica/optimize — otimiza a rota do dia */
 export async function optimizeRota(stops: unknown[], options?: unknown): Promise<any> {
-  const { data } = await api.post('/routexl/optimize', { stops, options });
+  const { data } = await api.post('/logistica/optimize', { stops, options });
   return data.data;
 }
 
-/** POST /api/routexl/save-route — salva a rota otimizada */
+/** POST /api/logistica/save-route — salva a rota otimizada */
 export async function saveRota(date: string, optimizedRoute: unknown, stops: unknown[]): Promise<{ routeId: string }> {
-  const { data } = await api.post('/routexl/save-route', { date, optimizedRoute, stops });
+  const { data } = await api.post('/logistica/save-route', { date, optimizedRoute, stops });
   return data.data;
 }
 

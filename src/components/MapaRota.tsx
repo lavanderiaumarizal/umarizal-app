@@ -11,10 +11,10 @@
  */
 
 import { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Linking } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import * as MapLibreGL from '@maplibre/maplibre-react-native';
 import { colors } from '../theme';
-import type { Waypoint } from '../api/routexl';
+import type { Waypoint } from '../api/rotas';
 
 /** Style gratuito do OpenFreeMap (tiles OpenStreetMap, sem chave) */
 const STYLE_URL = 'https://tiles.openfreemap.org/styles/liberty';
@@ -27,9 +27,13 @@ interface Props {
   waypoints: Waypoint[];
   /** Traçado real pelas ruas (pares [lat, lng]) — do ORS via backend */
   geometry?: number[][] | null;
+  /** Mostra a posição atual do motorista (quando rastreamento ativo) */
+  mostrarMinhaPosicao?: boolean;
+  /** Callback de navegação in-app (substitui o Google Maps) */
+  onNavegar?: (wp: Waypoint) => void;
 }
 
-export default function MapaRota({ waypoints, geometry }: Props) {
+export default function MapaRota({ waypoints, geometry, mostrarMinhaPosicao = false, onNavegar }: Props) {
   const [selecionado, setSelecionado] = useState<Waypoint | null>(null);
 
   const paradas = waypoints.filter(
@@ -87,8 +91,9 @@ export default function MapaRota({ waypoints, geometry }: Props) {
       : null;
 
   function navegar(wp: Waypoint) {
-    const url = `https://maps.google.com/?daddr=${wp.latitude},${wp.longitude}`;
-    void Linking.openURL(url).catch(() => undefined);
+    if (onNavegar) {
+      onNavegar(wp);
+    }
   }
 
   return (
@@ -103,6 +108,9 @@ export default function MapaRota({ waypoints, geometry }: Props) {
           zoom={11}
           {...(bounds ?? {})}
         />
+
+        {/* Posição do motorista (GPS — só quando rastreamento ativo) */}
+        {mostrarMinhaPosicao && <MapLibreGL.UserLocation animated />}
 
         {/* Traçado real pelas ruas (ORS); fallback: linha reta entre paradas */}
         {geometriaReal ? (

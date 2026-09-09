@@ -29,7 +29,7 @@ import { colors, primaryGradient } from '../theme';
 import { useAuthStore } from '../store/authStore';
 import { useAppStore } from '../store/appStore';
 import { minhasColetas, minhasEntregas } from '../api/orcamentos';
-import { getRotaDoDia } from '../api/routexl';
+import { getRotaDoDia } from '../api/rotas';
 import { kanbanPorPerfil } from '../api/kanban';
 import { getPrevisao, type PrevisaoDia } from '../api/weather';
 import DashboardCard from '../components/DashboardCard';

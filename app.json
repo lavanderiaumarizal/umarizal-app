@@ -2,7 +2,7 @@
   "expo": {
     "name": "Umarizal",
     "slug": "umarizal-app",
-    "version": "1.2.0",
+    "version": "1.3.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
@@ -12,7 +12,7 @@
     },
     "android": {
       "package": "com.umarizal.app",
-      "versionCode": 3,
+      "versionCode": 4,
       "adaptiveIcon": {
         "backgroundColor": "#111827",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -26,6 +26,15 @@
     },
     "plugins": [
       "expo-secure-store",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "O Umarizal usa sua localização para navegar na rota do dia e informar aos clientes o horário previsto de chegada.",
+          "locationAlwaysAndWhenInUsePermission": "Permitir o tempo todo permite que o app envie sua posição da rota mesmo em segundo plano, mantendo o cliente informado em tempo real.",
+          "isAndroidBackgroundLocationEnabled": true,
+          "isAndroidForegroundServiceEnabled": true
+        }
+      ],
       "@maplibre/maplibre-react-native",
       "./plugins/withAndroidReleaseAbiFilters"
     ],

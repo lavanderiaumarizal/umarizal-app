@@ -4,6 +4,37 @@
 > **Formato:** baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/)
 > **Nota:** tarefas de backend (B1–B23) são versionadas no repositório `backend/`
 
+## [1.3.0] — 2026-09-08 · Rastreamento GPS em tempo real + navegação in-app
+
+### ✨ Adicionado
+- **Rastreamento GPS contínuo**: pings de posição ao backend a cada ~15s com
+  o app aberto OU fechado (foreground service Android com notificação
+  persistente — `expo-location` + `expo-task-manager`, permissão "Permitir o
+  tempo todo")
+- **Navegação in-app com turn-by-turn do ORS** (manobras por voz visual:
+  instrução atual + distância + chegada prevista) — mapa MapLibre/OpenFreeMap
+  seguindo o motorista. **Sem Google Maps**: a posição do motorista nunca vai
+  a terceiros
+- Botão "📍 Maps" substituído por "🧭 Navegar" (abre a navegação no próprio app)
+- **Auto-início do rastreamento no horário de saída** definido na rota — o
+  cliente passa a acompanhar o mapa em tempo real exatamente a partir desse
+  horário (regra do backend)
+- **Recálculo das previsões pela posição real do motorista** (ORS): após cada
+  coleta/entrega e a cada 5 min em rota, os horários previstos das paradas
+  pendentes são reancorados no "agora" — acabou o "chegaríamos 17:20 e
+  chegamos 16:00"
+- Card de rastreamento na Rota do Dia: iniciar/encerrar manualmente, status
+  (🟢 ativo / parado) e horário de abertura do mapa para o cliente
+
+### 🔒 Privacidade
+- A posição do motorista só fica visível ao cliente quando o orçamento está
+  FINALIZADO, é do dia, está na rota e a navegação está em curso após o
+  horário de saída — nada é enviado ao Google Maps
+
+### 🔄 Alterado
+- API do app migrada de `/api/routexl/*` para `/api/logistica/*` (alias de
+  compatibilidade ativo no backend)
+
 ## [1.2.0] — 2026-09-08 · ORS: qualidade de rota e ordenação manual
 
 ### ✨ Adicionado
