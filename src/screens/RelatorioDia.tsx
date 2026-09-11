@@ -52,13 +52,22 @@ function fmtDuracao(min?: number | null): string {
   return h > 0 ? `${h}h${m > 0 ? ` ${m}min` : ''}` : `${m}min`;
 }
 
+/** m² → "42,50 m²" (null/0 → "—") */
+function fmtM2(v?: number | null): string {
+  if (!v || v <= 0) return '—';
+  return `${v.toFixed(2).replace('.', ',')} m²`;
+}
+
 /** Linha de texto de um orçamento do relatório (para tela e compartilhar) */
 function fmtOrcamento(o: RelatorioOrcamento, ehAdmin: boolean): string[] {
   const status = o.realizada ? '✅' : '⏳';
   const cliente = o.cliente || 'Cliente —';
   const endereco = [o.endereco, o.complemento].filter(Boolean).join(', ');
   const itens = (o.itens ?? [])
-    .map((i) => `     • ${i.quantidade}x ${i.descricao}`)
+    .map((i) => {
+      const m2 = i.areaM2 != null && i.areaM2 > 0 ? ` — ${String(i.areaM2).replace('.', ',')} m²` : '';
+      return `     • ${i.quantidade}x ${i.descricao}${m2}`;
+    })
     .join('\n');
   const linhas = [
     `${status} ${o.codigo} — ${cliente}${o.usaEnderecoServico ? ' 📍end. serviço' : ''}`,
@@ -126,7 +135,13 @@ export default function RelatorioDiaScreen() {
         </Text>
         {(o.itens ?? []).length > 0 && (
           <Text style={styles.detalheItens}>
-            {(o.itens ?? []).map((i) => `${i.quantidade}x ${i.descricao}`).join('  ·  ')}
+            {(o.itens ?? [])
+              .map((i) => {
+                const m2 = i.areaM2 != null && i.areaM2 > 0 ? ` (${String(i.areaM2).replace('.', ',')} m²)` : '';
+                return `${i.quantidade}x ${i.descricao}${m2}`;
+              })
+              .join('  ·  ')}
+            {o.areaM2 ? `   ⇒ ${fmtM2(o.areaM2)}` : ''}
           </Text>
         )}
       </View>
@@ -147,6 +162,7 @@ export default function RelatorioDiaScreen() {
       '',
       `📦 Coletas: ${relatorio.totalColetas} realizadas · ${relatorio.coletasAgendadas ?? 0} agendadas`,
       `🚚 Entregas: ${relatorio.totalEntregas} realizadas · ${relatorio.entregasAgendadas ?? 0} agendadas`,
+      `🧵 Metragem: ${fmtM2(relatorio.areaColetasM2)} coletados · ${fmtM2(relatorio.areaEntregasM2)} entregues`,
       ehAdmin && relatorio.valorColetas !== undefined
         ? `💰 Valor coletado: ${fmtMoeda(relatorio.valorColetas)}`
         : '',
@@ -225,11 +241,13 @@ export default function RelatorioDiaScreen() {
           <Text style={styles.cardValue}>{relatorio.totalColetas}</Text>
           <Text style={styles.cardLabel}>📦 Coletas</Text>
           <Preco value={relatorio.valorColetas} style={styles.cardValor} />
+          <Text style={styles.cardM2}>🧵 {fmtM2(relatorio.areaColetasM2)}</Text>
         </View>
         <View style={[styles.card, { borderLeftColor: colors.brandGold }]}>
           <Text style={styles.cardValue}>{relatorio.totalEntregas}</Text>
           <Text style={styles.cardLabel}>🚚 Entregas</Text>
           <Preco value={relatorio.valorEntregas} style={styles.cardValor} />
+          <Text style={styles.cardM2}>🧵 {fmtM2(relatorio.areaEntregasM2)}</Text>
         </View>
       </View>
 
@@ -261,7 +279,7 @@ export default function RelatorioDiaScreen() {
           )}
           {(relatorio.rota.horarioSaida || relatorio.rota.previsaoRetorno) && (
             <Text style={styles.rotaLinha}>
-              🕐 Saída {relatorio.rota.horarioSaida ?? '––:––'} · Retorno previsto{' '}
+              🕐 Saída {relatorio.rota.horarioSaida ?? '––:––'} · ETA retorno{' '}
               {relatorio.rota.previsaoRetorno ?? '––:––'}
             </Text>
           )}
@@ -290,7 +308,10 @@ export default function RelatorioDiaScreen() {
             <View key={t.categoria} style={styles.linha}>
               <Text style={styles.linhaLabel}>{t.categoria}</Text>
               <View style={styles.linhaRight}>
-                <Text style={styles.linhaQtd}>{t.quantidade}</Text>
+                <Text style={styles.linhaQtd}>
+                  {t.quantidade}
+                  {t.areaM2 ? ` · ${fmtM2(t.areaM2)}` : ''}
+                </Text>
                 <Preco value={t.valor} style={styles.linhaValor} />
               </View>
             </View>
@@ -359,6 +380,7 @@ const styles = StyleSheet.create({
   cardValue: { color: colors.text, fontSize: 30, fontWeight: 'bold' },
   cardLabel: { color: colors.textSecondary, fontSize: 15, marginTop: 2 },
   cardValor: { color: colors.brandGold, fontSize: 15, fontWeight: 'bold', marginTop: 4 },
+  cardM2: { color: colors.brandLime, fontSize: 14, fontWeight: 'bold', marginTop: 2 },
   agendadasBox: {
     backgroundColor: colors.activeBg,
     borderWidth: 1,

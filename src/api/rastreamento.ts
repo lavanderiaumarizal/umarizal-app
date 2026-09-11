@@ -58,24 +58,6 @@ export interface RecalculoResult {
   geometriaAtualizada: boolean;
 }
 
-export interface Manobra {
-  instrucao: string;
-  via: string;
-  tipo: string;
-  exitNumber?: number | null;
-  distanciaM: number;
-  duracaoS: number;
-  lat: number;
-  lng: number;
-}
-
-export interface NavegacaoResult {
-  coordinates: number[][];
-  distanceKm: number;
-  durationMin: number;
-  manobras: Manobra[];
-}
-
 /** Inicia (ou reaproveita) a sessão de rastreamento da rota */
 export async function iniciarRastreamento(routeId?: string): Promise<SessaoRastreamento> {
   const { data } = await api.post<ApiSuccessResponse<SessaoRastreamento>>(
@@ -120,20 +102,6 @@ export async function recalcularDaPosicao(
   const { data } = await api.post<ApiSuccessResponse<RecalculoResult>>(
     '/logistica/rastreamento/recalcular',
     { routeId, lat, lng },
-  );
-  return data.data;
-}
-
-/** Turn-by-turn do ORS: geometria + manobras até o destino */
-export async function navegarAte(
-  lat: number,
-  lng: number,
-  latDestino: number,
-  lngDestino: number,
-): Promise<NavegacaoResult> {
-  const { data } = await api.post<ApiSuccessResponse<NavegacaoResult>>(
-    '/logistica/rastreamento/navegar',
-    { lat, lng, latDestino, lngDestino, preference: 'recommended' },
   );
   return data.data;
 }

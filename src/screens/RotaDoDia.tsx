@@ -6,9 +6,11 @@
  * - Sem rota salva → mensagem + "🔄 Gerar Rota" (eventos → optimize → save-route)
  * - Paradas ordenadas: ordem, tipo, endereço, horário, status
  * - Paradas concluídas: check verde + desabilitadas (sem botões)
- * - Botões por parada: 🧭 Navegar (in-app, ORS) · Coletar (B9) / Entregar (B10)
+ * - Botões por parada: 🧭 Navegar (Google Maps — deep link) · Coletar (B9) / Entregar (B10)
  * - Rastreamento GPS em tempo real (foreground + background — o cliente
  *   acompanha a partir do horário de saída, regra do backend)
+ * - Navegação viária = Google Maps (deep link): o app nativo dá seta de
+ *   direção, realinhamento, barra superior e footer — nada de mapa in-app.
  * - Pull-to-refresh
  */
 
@@ -23,6 +25,7 @@ import {
   RefreshControl,
   Modal,
   TextInput,
+  Linking,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -52,7 +55,10 @@ import {
 import { coletaRealizada, entregaRealizada } from '../api/orcamentos';
 import CameraCapture from '../components/CameraCapture';
 import MapaRota from '../components/MapaRota';
-import NavegacaoRota from '../components/NavegacaoRota';
+import {
+  pedirPermissoesEssenciais,
+  permissaoLocalizacaoNegadaDefinitivo,
+} from '../tarefa/permissoes';
 import type { RootStackParamList } from '../navigation/AppNavigator';
 
 /** Formata YYYY-MM-DD local */
@@ -140,7 +146,6 @@ export default function RotaDoDiaScreen() {
   // ═══ Rastreamento GPS em tempo real ═══
   const [rastreando, setRastreando] = useState(false);
   const [rastreandoMsg, setRastreandoMsg] = useState('');
-  const [navegandoStop, setNavegandoStop] = useState<Stop | null>(null);
   const posicaoRef = useRef<{ lat: number; lng: number } | null>(null);
   const autoStartRef = useRef<string | null>(null); // dataStr já tentada p/ auto-start
   const recalcTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -445,11 +450,18 @@ export default function RotaDoDiaScreen() {
     }
   }
 
-  /** 🧭 Navegação IN-APP (turn-by-turn do ORS — sem Google Maps, sem enviar
-   *  a posição do motorista a terceiros). Paradas FIXO: o backend já envia o
-   *  endereço REAL do cadastro — nunca "FIXO-Nome" (fix 4). */
+  /** 🧭 Navegação via Google Maps (deep link — o app nativo dá seta de direção,
+   *  realinhamento automático, barra superior e footer de graça). Coordenadas
+   *  do waypoint quando existem; senão o endereço limpo (paradas FIXO chegam
+   *  com o endereço REAL do cadastro — nunca "FIXO-Nome"). */
   function navegarParada(stop: Stop) {
-    setNavegandoStop(stop);
+    const wp = rota?.allWaypoints.find((w) => w.ordem === stop.ordem);
+    const destino =
+      wp?.latitude != null && wp?.longitude != null
+        ? `${wp.latitude},${wp.longitude}`
+        : encodeURIComponent(limparEndereco(stop.endereco?.logradouro ?? ''));
+    const url = `https://www.google.com/maps/dir/?api=1&destination=${destino}&travelmode=driving`;
+    Linking.openURL(url).catch(() => setErro('Não foi possível abrir o Google Maps.'));
   }
 
   // ═══ Rastreamento GPS ═══
@@ -481,9 +493,17 @@ export default function RotaDoDiaScreen() {
       );
     } catch (e: any) {
       if (e?.message === 'PERMISSAO_NEGADA') {
-        setRastreandoMsg('Permissão de localização negada — o cliente não poderá acompanhar');
+        const negadoDefinitivo = await permissaoLocalizacaoNegadaDefinitivo();
+        setRastreandoMsg(
+          negadoDefinitivo
+            ? 'Permissão de localização negada — abra Ajustes › Apps › Umarizal › Permissões › Localização e permita.'
+            : 'Permissão de localização é necessária para o cliente acompanhar a rota.',
+        );
       } else {
-        setRastreandoMsg('');
+        const status = e?.response?.status;
+        setRastreandoMsg(
+          `Não foi possível iniciar o rastreamento${status ? ` (erro ${status})` : ''} — verifique a conexão e toque novamente.`,
+        );
       }
     }
   }
@@ -499,7 +519,13 @@ export default function RotaDoDiaScreen() {
     }
   }
 
-  /** 🚦 AUTO-START: inicia o rastreamento no horário de saída da rota — o
+  /** 🔐 Permissões (GPS + câmera) — o Android só pede em RUNTIME, nunca na
+     *  instalação; pedimos de uma vez na 1ª abertura da tela (idempotente). */
+    useEffect(() => {
+      void pedirPermissoesEssenciais();
+    }, []);
+
+    /** 🚦 AUTO-START: inicia o rastreamento no horário de saída da rota — o
    *  mapa do cliente fica disponível exatamente a partir desse horário. */
   useEffect(() => {
     if (!rota || loading) return;
@@ -1081,32 +1107,6 @@ export default function RotaDoDiaScreen() {
         </View>
       </Modal>
 
-      {/* 🧭 Navegação in-app (turn-by-turn ORS — sem Google Maps) */}
-      <Modal
-        visible={navegandoStop !== null}
-        animationType="slide"
-        onRequestClose={() => setNavegandoStop(null)}
-      >
-        {navegandoStop
-          ? (() => {
-              // Coordenadas vêm do waypoint da rota (mesma ordem)
-              const wp = rota?.allWaypoints.find((w) => w.ordem === navegandoStop.ordem);
-              return (
-                <NavegacaoRota
-                  destino={{
-                    lat: wp?.latitude ?? null,
-                    lng: wp?.longitude ?? null,
-                    endereco: limparEndereco(navegandoStop.endereco?.logradouro ?? ''),
-                    titulo: `${navegandoStop.tipo === 'COLETA' ? 'Coleta' : 'Entrega'} · ${
-                      navegandoStop.cliente?.nome ?? navegandoStop.codigo ?? ''
-                    }`,
-                  }}
-                  onFechar={() => setNavegandoStop(null)}
-                />
-              );
-            })()
-          : null}
-      </Modal>
     </View>
   );
 }

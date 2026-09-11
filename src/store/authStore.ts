@@ -18,7 +18,9 @@ import type { Usuario } from '../types';
 
 // ⚠️ SecureStore (Android) só aceita chaves com letras/números, '.', '-', '_'
 // (NÃO aceita '@', ':' — causa 'invalid key provided to SecureStore')
-const TOKEN_KEY = 'umarizal.token';
+// Exportada: a task de background (pings GPS com app fechado) lê o token
+// direto do SecureStore — o zustand começa vazio no JS headless.
+export const TOKEN_KEY = 'umarizal.token';
 const USER_KEY = '@umarizal:user'; // AsyncStorage aceita qualquer string
 
 interface AuthState {

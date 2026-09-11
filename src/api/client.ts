@@ -8,7 +8,8 @@
  */
 
 import axios from 'axios';
-import { useAuthStore } from '../store/authStore';
+import * as SecureStore from 'expo-secure-store';
+import { useAuthStore, TOKEN_KEY } from '../store/authStore';
 
 // R-4: URL configurável via variável de ambiente do Expo (EXPO_PUBLIC_*),
 // com fallback para a API de produção.
@@ -21,9 +22,19 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-// Interceptor de request: adiciona token em toda requisição
+// Interceptor de request: adiciona token em toda requisição.
+// Fallback ao SecureStore: no JS headless (pings GPS com o app fechado) o
+// zustand começa vazio — sem isso TODOS os pings em background iam sem
+// Authorization e o mapa do motorista ficava sem dado.
 api.interceptors.request.use(async (config) => {
-  const token = useAuthStore.getState().token;
+  let token = useAuthStore.getState().token;
+  if (!token) {
+    try {
+      token = await SecureStore.getItemAsync(TOKEN_KEY);
+    } catch {
+      token = null;
+    }
+  }
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }

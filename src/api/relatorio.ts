@@ -9,6 +9,8 @@ import type { ApiSuccessResponse } from '../types';
 export interface RelatorioItem {
   descricao: string;
   quantidade: number;
+  /** Metragem do item em m² (largura×comprimento×qtd) — null sem medidas */
+  areaM2?: number | null;
 }
 
 /** Orçamento detalhado do dia (coleta ou entrega) */
@@ -30,6 +32,8 @@ export interface RelatorioOrcamento {
   data: string | null;
   itens: RelatorioItem[];
   valor?: number;
+  /** Metragem total do orçamento em m² */
+  areaM2?: number;
 }
 
 /** Resumo da rota do dia (o dado que o motorista reconhece) */
@@ -55,8 +59,11 @@ export interface RelatorioDia {
   entregasDetalhe?: RelatorioOrcamento[];
   valorColetas?: number;
   valorEntregas?: number;
+  /** Metragem do dia em m² (coletas / entregas — listas mescladas do dia) */
+  areaColetasM2?: number;
+  areaEntregasM2?: number;
   rota?: RelatorioRota;
-  porTipoServico: Array<{ categoria: string; quantidade: number; valor?: number }>;
+  porTipoServico: Array<{ categoria: string; quantidade: number; valor?: number; areaM2?: number }>;
   tempoMedioFase: Array<{ fase: string; label: string; minutosMedios: number }>;
   admin: boolean;
 }
